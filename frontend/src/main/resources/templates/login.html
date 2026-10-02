@@ -10,18 +10,19 @@
             <p class="texto-secundario">Objetos perdidos y encontrados del campus.</p>
         </div>
 
-        <!-- Los nombres "username" y "password" son los que espera Spring Security por defecto. -->
+        <!-- Nivel 1: los campos no son obligatorios, "Ingresar" entra directo. El backend agregará la validación.
+             Los nombres "username" y "password" son los que espera Spring Security por defecto. -->
         <form class="panel" th:action="@{/login}" method="post">
             <h2>Iniciar sesión</h2>
             <p class="aviso aviso--error" role="alert" th:if="${param.error}">Correo o contraseña incorrectos. Inténtalo de nuevo.</p>
             <p class="aviso" role="status" th:if="${param.logout}">Cerraste sesión.</p>
             <div class="campo">
                 <label for="username">Correo institucional</label>
-                <input id="username" name="username" type="email" autocomplete="username" required>
+                <input id="username" name="username" type="email" autocomplete="username">
             </div>
             <div class="campo">
                 <label for="password">Contraseña</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required>
+                <input id="password" name="password" type="password" autocomplete="current-password">
             </div>
             <button class="boton" type="submit">Ingresar</button>
         </form>
