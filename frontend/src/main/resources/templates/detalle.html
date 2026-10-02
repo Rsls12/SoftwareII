@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!-- HU-12: detalle. HU-13: estado. HU-14: cambiar estado (Oficina). HU-15: historial (Oficina).
+     HU-20 / HU-21: eliminar / editar (dueño del reporte). -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head(${objeto.nombre})}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('')}"></header>
+
+<main class="contenido">
+    <a class="volver" th:if="${yo.esEstudiante() and objeto.esDe(yo)}" th:href="@{/mis-publicaciones}">← Volver a mis reportes</a>
+    <a class="volver" th:unless="${yo.esEstudiante() and objeto.esDe(yo)}" th:href="@{/buscar}">← Volver a buscar</a>
+    <p th:replace="~{fragmentos :: aviso}"></p>
+
+    <div class="pagina-titulo">
+        <div class="acciones">
+            <span th:replace="~{fragmentos :: estado(${objeto.estado})}"></span>
+            <code th:text="${objeto.codigo}">UF-0001</code>
+        </div>
+        <h1 th:text="${objeto.nombre}">Nombre del objeto</h1>
+    </div>
+
+    <div class="detalle">
+        <img th:if="${objeto.imagenUrl}" class="detalle__foto" th:src="${objeto.imagenUrl}"
+             th:alt="|Foto de ${objeto.nombre}|">
+        <div th:unless="${objeto.imagenUrl}" class="detalle__foto">Sin foto</div>
+
+        <div class="panel">
+            <dl class="datos">
+                <dt>Tipo</dt>          <dd th:text="${objeto.tipo.etiqueta}">Perdido</dd>
+                <dt>Categoría</dt>     <dd th:text="${objeto.categoria.etiqueta}">Tecnología</dd>
+                <dt>Ubicación</dt>     <dd th:text="${objeto.ubicacion.etiqueta}">Pabellón C</dd>
+                <dt>Reportado</dt>     <dd th:text="${#temporals.format(objeto.fechaHoraReporte, 'dd/MM/yyyy HH:mm')}">01/10/2026</dd>
+                <dt>Por</dt>           <dd th:text="${objeto.reportadoPor.nombreCompleto}">Ana Torres</dd>
+                <dt>Descripción</dt>   <dd th:text="${objeto.descripcion}">Descripción</dd>
+            </dl>
+
+            <!-- Acciones del dueño del reporte -->
+            <div class="acciones" th:if="${objeto.isActivo() and objeto.esDe(yo)}">
+                <a class="boton boton--secundario" th:if="${objeto.puedeEditarlo(yo)}"
+                   th:href="@{/objetos/{id}/editar(id=${objeto.idObjeto})}">Editar</a>
+                <form th:action="@{/objetos/{id}/eliminar(id=${objeto.idObjeto})}" method="post"
+                      onsubmit="return confirm('¿Eliminar este reporte? Dejará de aparecer en las búsquedas.')">
+                    <button class="boton boton--peligro" type="submit">Eliminar reporte</button>
+                </form>
+            </div>
+            <p class="campo__ayuda" th:if="${objeto.esDe(yo) and !objeto.puedeEditarlo(yo)}">
+                Solo puedes editar el reporte mientras esté en estado "Reportado".
+            </p>
+        </div>
+    </div>
+
+    <!-- ===== Solo Oficina ===== -->
+    <th:block th:if="${yo.esOficina()}">
+        <section class="seccion" aria-labelledby="titulo-estado">
+            <h2 id="titulo-estado">Cambiar estado</h2>
+            <form class="formulario panel" th:action="@{/objetos/{id}/estado(id=${objeto.idObjeto})}" method="post">
+                <div class="campo">
+                    <label for="estado">Nuevo estado</label>
+                    <select id="estado" name="estado" required>
+                        <option th:each="e : ${estados}" th:value="${e}" th:text="${e.etiqueta}"
+                                th:selected="${e == objeto.estado}">Reportado</option>
+                    </select>
+                </div>
+                <div class="campo">
+                    <label for="observacion">Observación (opcional)</label>
+                    <input id="observacion" name="observacion" type="text" maxlength="200"
+                           placeholder="Ej. Recibido de seguridad">
+                </div>
+                <div class="acciones">
+                    <button class="boton" type="submit">Guardar estado</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-historial">
+            <h2 id="titulo-historial">Historial de estados</h2>
+            <ol class="linea-tiempo" th:unless="${historial.isEmpty()}">
+                <li th:each="h : ${historial}">
+                    <p>
+                        <span th:replace="~{fragmentos :: estado(${h.estadoAnterior})}"></span>
+                        →
+                        <span th:replace="~{fragmentos :: estado(${h.estadoNuevo})}"></span>
+                    </p>
+                    <p th:if="${h.observacion}" th:text="${h.observacion}">Observación</p>
+                    <p class="campo__ayuda"
+                       th:text="|${#temporals.format(h.fechaHora, 'dd/MM/yyyy HH:mm')} · ${h.realizadoPor.nombreCompleto}|">
+                        01/10/2026 · Lucía Paredes
+                    </p>
+                </li>
+            </ol>
+            <p class="texto-secundario" th:if="${historial.isEmpty()}">Este objeto aún no tiene cambios de estado.</p>
+        </section>
+    </th:block>
+</main>
+</body>
+</html>

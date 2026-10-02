@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!-- HU-16: buscar objetos. HU-17: filtrar resultados. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Buscar')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('buscar')}"></header>
+
+<main class="contenido">
+    <h1>Buscar objetos</h1>
+
+    <form class="filtros panel" th:action="@{/buscar}" method="get" role="search">
+        <div class="campo campo--ancho">
+            <label for="q">Palabra clave</label>
+            <input id="q" name="q" type="search" placeholder="Ej. laptop, botella, DNI" th:value="${q}">
+        </div>
+        <div class="campo">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" name="tipo">
+                <option value="">Todos</option>
+                <option th:each="t : ${tipos}" th:value="${t}" th:text="${t.etiqueta}" th:selected="${t == tipoElegido}">Perdido</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" name="categoria">
+                <option value="">Todas</option>
+                <option th:each="c : ${categorias}" th:value="${c}" th:text="${c.etiqueta}" th:selected="${c == categoriaElegida}">Tecnología</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="ubicacion">Ubicación</label>
+            <select id="ubicacion" name="ubicacion">
+                <option value="">Todas</option>
+                <option th:each="p : ${pabellones}" th:value="${p}" th:text="${p.etiqueta}" th:selected="${p == ubicacionElegida}">Pabellón A</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="estado">Estado</label>
+            <select id="estado" name="estado">
+                <option value="">Todos</option>
+                <option th:each="e : ${estados}" th:value="${e}" th:text="${e.etiqueta}" th:selected="${e == estadoElegido}">Reportado</option>
+            </select>
+        </div>
+        <button class="boton" type="submit">Buscar</button>
+    </form>
+
+    <section class="seccion" aria-labelledby="titulo-resultados">
+        <div class="seccion__cabecera">
+            <h2 id="titulo-resultados" th:text="${resultados.size() == 1} ? '1 resultado' : |${resultados.size()} resultados|">0 resultados</h2>
+            <a th:href="@{/buscar}">Limpiar filtros</a>
+        </div>
+
+        <div class="vacio" th:if="${resultados.isEmpty()}">
+            <p>No encontramos objetos con esos filtros.</p>
+            <a class="boton boton--secundario" th:href="@{/buscar}">Ver todos los objetos</a>
+        </div>
+
+        <!-- Estudiante ve tarjetas; Seguridad y Oficina ven tabla. -->
+        <th:block th:unless="${resultados.isEmpty()}">
+            <ul class="tarjetas" th:if="${yo.esEstudiante()}">
+                <li th:each="o : ${resultados}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
+            </ul>
+            <th:block th:unless="${yo.esEstudiante()}">
+                <div th:replace="~{fragmentos :: tabla(${resultados})}"></div>
+            </th:block>
+        </th:block>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* Valores de diseño de U-FOUND (ver docs/direccion-visual.md). Cambia aquí, no en app.css. */
+:root {
+  /* Color base */
+  --c-bg: #F4F3F1;
+  --c-surface: #FDFDFC;
+  --c-text: #1C2230;
+  --c-text-muted: #625F5A;
+  --c-border: #E2DFDA;
+  --c-border-strong: #8E8A84;
+  --c-accent: #2A3F7E;
+  --c-accent-hover: #1F2F60;
+  --c-accent-soft: #E6E9F2;
+  --c-on-accent: #FDFDFC;
+  --c-error: #A3321F;
+
+  /* Estados de objeto: texto / fondo */
+  --st-reportado-fg: #8A3B2B;    --st-reportado-bg: #F5E6E1;
+  --st-revision-fg: #6B5212;     --st-revision-bg: #F3EBD6;
+  --st-coincidencia-fg: #5E3A6E; --st-coincidencia-bg: #EEE6F1;
+  --st-oficina-fg: #365A41;      --st-oficina-bg: #E3EDE4;
+  --st-entregado-fg: #F4F3F1;    --st-entregado-bg: #1C2230;
+  --st-archivado-fg: #5E5B57;    --st-archivado-bg: #ECEAE7;
+
+  /* Tipografía */
+  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: 1.875rem;
+  --lh-body: 1.5;
+  --lh-tight: 1.2;
+
+  /* Espaciado */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-12: 3rem;
+  --tap-min: 44px;
+  --content-max: 1200px;
+
+  /* Forma */
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgb(28 34 48 / 0.06), 0 2px 8px rgb(28 34 48 / 0.06);
+  --focus-ring: 0 0 0 2px var(--c-surface), 0 0 0 5px var(--c-accent);
+}

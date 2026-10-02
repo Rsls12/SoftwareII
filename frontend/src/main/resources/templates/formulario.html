@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  Un solo formulario para tres casos:
+  - Estudiante reporta un objeto perdido (HU-04 a HU-09)
+  - Seguridad registra un objeto encontrado (HU-10, HU-11)
+  - Estudiante edita su reporte (HU-21): solo descripción, ubicación e imagen
+  "objeto" llega solo al editar; si no existe, es un registro nuevo.
+-->
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      th:with="editando=${objeto != null},
+               titulo=${editando ? 'Editar reporte' : (yo.esSeguridad() ? 'Registrar objeto encontrado' : 'Reportar objeto perdido')}">
+<head th:replace="~{fragmentos :: head(${titulo})}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav(${editando} ? '' : 'nuevo')}"></header>
+
+<main class="contenido">
+    <a class="volver" th:if="${editando}" th:href="@{/objetos/{id}(id=${objeto.idObjeto})}">← Volver al detalle</a>
+
+    <div class="pagina-titulo">
+        <h1 th:text="${titulo}">Reportar objeto perdido</h1>
+        <p class="texto-secundario">
+            Fecha y hora del reporte:
+            <strong th:text="${#temporals.format(editando ? objeto.fechaHoraReporte : #temporals.createNow(), 'dd/MM/yyyy HH:mm')}">01/10/2026 10:30</strong>
+            (se registra automáticamente)
+        </p>
+        <p class="texto-secundario" th:if="${editando}">
+            Solo puedes cambiar la ubicación, la descripción y la foto.
+        </p>
+    </div>
+
+    <form class="formulario panel" method="post" enctype="multipart/form-data"
+          th:action="${editando} ? @{/objetos/{id}(id=${objeto.idObjeto})} : @{/objetos}">
+
+        <div class="campo">
+            <label for="nombre">¿Qué objeto es?</label>
+            <input id="nombre" name="nombre" type="text" maxlength="80" required
+                   placeholder="Ej. Laptop Lenovo gris"
+                   th:value="${editando} ? ${objeto.nombre}" th:disabled="${editando}">
+        </div>
+
+        <div class="campo">
+            <label for="categoria">Categoría</label>
+            <select id="categoria" name="categoria" required th:disabled="${editando}">
+                <option value="">Elige una categoría</option>
+                <option th:each="c : ${categorias}" th:value="${c}" th:text="${c.etiqueta}"
+                        th:selected="${editando and c == objeto.categoria}">Tecnología</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="ubicacion" th:text="${yo.esSeguridad()} ? '¿Dónde lo encontraste?' : '¿Dónde lo perdiste?'">Ubicación</label>
+            <select id="ubicacion" name="ubicacion" required>
+                <option value="">Elige un pabellón</option>
+                <option th:each="p : ${pabellones}" th:value="${p}" th:text="${p.etiqueta}"
+                        th:selected="${editando and p == objeto.ubicacion}">Pabellón A</option>
+            </select>
+        </div>
+
+        <div class="campo">
+            <label for="descripcion">Descripción física</label>
+            <textarea id="descripcion" name="descripcion" minlength="10" maxlength="500" required
+                      aria-describedby="ayuda-descripcion"
+                      placeholder="Color, marca, stickers, marcas o cualquier detalle que lo identifique."
+                      th:text="${editando} ? ${objeto.descripcion}"></textarea>
+            <p id="ayuda-descripcion" class="campo__ayuda">Entre 10 y 500 caracteres.</p>
+        </div>
+
+        <div class="campo">
+            <label for="foto">Foto (opcional)</label>
+            <!-- Avisa antes de enviar si la foto pasa de 5 MB (el servidor la rechazaría y se perdería el formulario). -->
+            <input id="foto" name="foto" type="file" accept="image/*" aria-describedby="ayuda-foto"
+                   onchange="this.setCustomValidity(this.files[0] && this.files[0].size > 5 * 1024 * 1024 ? 'La foto pesa más de 5 MB. Elige una más liviana.' : '')">
+            <p id="ayuda-foto" class="campo__ayuda"
+               th:text="${editando and objeto.imagenUrl != null} ? 'Si subes otra, reemplaza la actual. Máximo 5 MB.' : 'Ayuda a reconocerlo más rápido. Máximo 5 MB.'">
+                Máximo 5 MB.
+            </p>
+        </div>
+
+        <div class="acciones">
+            <button class="boton" type="submit" th:text="${editando} ? 'Guardar cambios' : 'Registrar'">Registrar</button>
+            <a class="boton boton--secundario" th:href="${editando} ? @{/objetos/{id}(id=${objeto.idObjeto})} : @{/}">Cancelar</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

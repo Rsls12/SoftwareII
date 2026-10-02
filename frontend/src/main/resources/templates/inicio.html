@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- HU-03: inicio distinto según el rol. HU-19: objetos recientes. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Inicio')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('inicio')}"></header>
+
+<main class="contenido">
+    <div class="pagina-titulo">
+        <h1 th:text="|Hola, ${yo.nombres}|">Hola</h1>
+        <p class="texto-secundario" th:if="${yo.esEstudiante()}">¿Perdiste algo? Repórtalo y sigue su estado desde aquí.</p>
+        <p class="texto-secundario" th:if="${yo.esSeguridad()}">Registra los objetos que encuentres en el campus.</p>
+        <p class="texto-secundario" th:if="${yo.esOficina()}">Revisa los objetos y actualiza su estado.</p>
+    </div>
+
+    <!-- ===== Estudiante ===== -->
+    <th:block th:if="${yo.esEstudiante()}">
+        <div class="acciones">
+            <a class="boton" th:href="@{/objetos/nuevo}">Reportar objeto perdido</a>
+            <a class="boton boton--secundario" th:href="@{/buscar}">Buscar objetos</a>
+        </div>
+
+        <section class="seccion" aria-labelledby="titulo-mios">
+            <div class="seccion__cabecera">
+                <h2 id="titulo-mios">Mis reportes</h2>
+                <a th:href="@{/mis-publicaciones}">Ver todos</a>
+            </div>
+            <ul class="tarjetas" th:unless="${misReportes.isEmpty()}">
+                <li th:each="o : ${misReportes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
+            </ul>
+            <p class="texto-secundario" th:if="${misReportes.isEmpty()}">Aún no has reportado ningún objeto.</p>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-recientes">
+            <h2 id="titulo-recientes">Objetos recientes</h2>
+            <ul class="tarjetas">
+                <li th:each="o : ${recientes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
+            </ul>
+        </section>
+    </th:block>
+
+    <!-- ===== Seguridad y Oficina ===== -->
+    <th:block th:unless="${yo.esEstudiante()}">
+        <div class="acciones">
+            <a class="boton" th:if="${yo.esSeguridad()}" th:href="@{/objetos/nuevo}">Registrar objeto encontrado</a>
+            <a class="boton" th:if="${yo.esOficina()}" th:href="@{/buscar}">Gestionar objetos</a>
+            <a class="boton boton--secundario" th:if="${yo.esOficina()}" th:href="@{/entregas}">Historial de entregas</a>
+        </div>
+
+        <section class="seccion" aria-labelledby="titulo-recientes-staff">
+            <div class="seccion__cabecera">
+                <h2 id="titulo-recientes-staff">Objetos recientes</h2>
+                <a th:href="@{/buscar}">Ver todos</a>
+            </div>
+            <div th:replace="~{fragmentos :: tabla(${recientes})}"></div>
+        </section>
+    </th:block>
+</main>
+</body>
+</html>

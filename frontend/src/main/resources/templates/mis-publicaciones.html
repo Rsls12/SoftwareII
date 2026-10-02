@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- HU-18: historial de publicaciones del estudiante. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Mis reportes')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('mios')}"></header>
+
+<main class="contenido">
+    <p th:replace="~{fragmentos :: aviso}"></p>
+
+    <div class="pagina-titulo">
+        <h1>Mis reportes</h1>
+        <p class="texto-secundario">Toca un reporte para ver su estado, editarlo o eliminarlo.</p>
+    </div>
+
+    <ul class="tarjetas" th:unless="${misReportes.isEmpty()}">
+        <li th:each="o : ${misReportes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
+    </ul>
+
+    <div class="vacio panel" th:if="${misReportes.isEmpty()}">
+        <p>Aún no has reportado ningún objeto.</p>
+        <a class="boton" th:href="@{/objetos/nuevo}">Reportar objeto perdido</a>
+    </div>
+</main>
+</body>
+</html>

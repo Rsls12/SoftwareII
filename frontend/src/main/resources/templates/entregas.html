@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!-- HU-22: historial de entregas (Oficina). -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Historial de entregas')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('entregas')}"></header>
+
+<main class="contenido">
+    <div class="pagina-titulo">
+        <h1>Historial de entregas</h1>
+        <p class="texto-secundario">Casos cerrados: objetos devueltos a sus dueños.</p>
+    </div>
+
+    <div class="tabla-contenedor" th:unless="${entregas.isEmpty()}">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Objeto</th>
+                <th scope="col">Reclamante</th>
+                <th scope="col">Documento</th>
+                <th scope="col">Encargado</th>
+                <th scope="col">Observación</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${entregas}">
+                <td><code th:text="${#temporals.format(e.fechaHoraEntrega, 'dd/MM/yyyy HH:mm')}">01/10/2026</code></td>
+                <td>
+                    <a th:href="@{/objetos/{id}(id=${e.objeto.idObjeto})}" th:text="${e.objeto.nombre}">Objeto</a>
+                    <code th:text="${e.objeto.codigo}">UF-0001</code>
+                </td>
+                <td th:text="${e.nombreReclamante}">Nombre</td>
+                <td th:text="${e.documentoReclamante}">DNI</td>
+                <td th:text="${e.encargado.nombreCompleto}">Encargado</td>
+                <td class="envolver" th:text="${e.observacion}">Observación</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="vacio panel" th:if="${entregas.isEmpty()}">Todavía no hay entregas registradas.</p>
+</main>
+</body>
+</html>

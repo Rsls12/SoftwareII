@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!-- Piezas que se repiten en todas las pantallas. Se usan con th:replace="~{fragmentos :: nombre}". -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<!-- <head> común. titulo = texto de la pestaña del navegador. -->
+<head th:fragment="head(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title th:text="${titulo} + ' · U-FOUND'">U-FOUND</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&display=swap">
+    <link rel="stylesheet" th:href="@{/css/tokens.css}">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+
+<body>
+
+<!-- Navegación. activo = pantalla actual ('inicio', 'buscar', 'nuevo', 'mios', 'entregas'). -->
+<header th:fragment="nav(activo)" class="barra">
+    <a class="barra__marca" th:href="@{/}">U-FOUND</a>
+
+    <p class="barra__usuario">
+        <span th:text="${yo.nombreCompleto}">Nombre</span>
+        <small th:text="${yo.rol.etiqueta}">Rol</small>
+    </p>
+
+    <nav aria-label="Principal">
+        <ul class="barra__links">
+            <li><a th:href="@{/}" th:attr="aria-current=${activo == 'inicio'} ? 'page' : null">Inicio</a></li>
+            <li><a th:href="@{/buscar}" th:attr="aria-current=${activo == 'buscar'} ? 'page' : null">Buscar</a></li>
+            <li th:if="${yo.esEstudiante()}">
+                <a th:href="@{/objetos/nuevo}" th:attr="aria-current=${activo == 'nuevo'} ? 'page' : null">Reportar</a>
+            </li>
+            <li th:if="${yo.esEstudiante()}">
+                <a th:href="@{/mis-publicaciones}" th:attr="aria-current=${activo == 'mios'} ? 'page' : null">Mis reportes</a>
+            </li>
+            <li th:if="${yo.esSeguridad()}">
+                <a th:href="@{/objetos/nuevo}" th:attr="aria-current=${activo == 'nuevo'} ? 'page' : null">Registrar</a>
+            </li>
+            <li th:if="${yo.esOficina()}">
+                <a th:href="@{/entregas}" th:attr="aria-current=${activo == 'entregas'} ? 'page' : null">Entregas</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- HU-02: el backend (Spring Security) cierra la sesión real en POST /logout. -->
+    <form class="barra__salir" th:action="@{/logout}" method="post">
+        <button class="boton-enlace" type="submit">Cerrar sesión</button>
+    </form>
+</header>
+
+<!-- Mensaje de confirmación después de guardar algo. -->
+<p th:fragment="aviso" th:if="${mensaje}" class="aviso" role="status" th:text="${mensaje}">Mensaje</p>
+
+<!-- Insignia de estado: color + texto. -->
+<span th:fragment="estado(e)" class="estado" th:classappend="'estado--' + ${e.claseCss}" th:text="${e.etiqueta}">Estado</span>
+
+<!-- Tarjeta de objeto (vista de estudiante). Toda la tarjeta es un enlace al detalle. -->
+<a th:fragment="tarjeta(o)" class="tarjeta" th:href="@{/objetos/{id}(id=${o.idObjeto})}">
+    <img th:if="${o.imagenUrl}" class="tarjeta__foto" th:src="${o.imagenUrl}" alt="">
+    <span th:unless="${o.imagenUrl}" class="tarjeta__foto" aria-hidden="true"
+          th:text="${o.categoria.etiqueta.substring(0, 1)}">T</span>
+    <div class="tarjeta__cuerpo">
+        <div class="tarjeta__cabecera">
+            <span th:replace="~{fragmentos :: estado(${o.estado})}"></span>
+            <code th:text="${o.codigo}">UF-0001</code>
+        </div>
+        <h3 class="tarjeta__titulo" th:text="${o.nombre}">Nombre</h3>
+        <p class="tarjeta__meta"
+           th:text="|${o.tipo.etiqueta} · ${o.categoria.etiqueta} · ${o.ubicacion.etiqueta} · ${#temporals.format(o.fechaHoraReporte, 'dd/MM/yyyy')}|">
+            Perdido · Tecnología · Pabellón C · 01/10/2026
+        </p>
+    </div>
+</a>
+
+<!-- Tabla de objetos (vistas de Seguridad y Oficina, que revisan listas largas). -->
+<div th:fragment="tabla(lista)" class="tabla-contenedor">
+    <table>
+        <thead>
+        <tr>
+            <th scope="col">Estado</th>
+            <th scope="col">Código</th>
+            <th scope="col">Objeto</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Ubicación</th>
+            <th scope="col">Fecha</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="o : ${lista}">
+            <td><span th:replace="~{fragmentos :: estado(${o.estado})}"></span></td>
+            <td><code th:text="${o.codigo}">UF-0001</code></td>
+            <td><a th:href="@{/objetos/{id}(id=${o.idObjeto})}" th:text="${o.nombre}">Nombre</a></td>
+            <td th:text="${o.tipo.etiqueta}">Perdido</td>
+            <td th:text="${o.ubicacion.etiqueta}">Pabellón A</td>
+            <td><code th:text="${#temporals.format(o.fechaHoraReporte, 'dd/MM/yyyy HH:mm')}">01/10/2026</code></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

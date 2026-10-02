@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- HU-01: pantalla de inicio de sesión. La validación de credenciales la hace el backend (Spring Security). -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Iniciar sesión')}"></head>
+<body>
+<main class="login">
+    <div class="login__caja">
+        <div class="pagina-titulo">
+            <h1 class="login__marca">U-FOUND</h1>
+            <p class="texto-secundario">Objetos perdidos y encontrados del campus.</p>
+        </div>
+
+        <!-- Los nombres "username" y "password" son los que espera Spring Security por defecto. -->
+        <form class="panel" th:action="@{/login}" method="post">
+            <h2>Iniciar sesión</h2>
+            <p class="aviso aviso--error" role="alert" th:if="${param.error}">Correo o contraseña incorrectos. Inténtalo de nuevo.</p>
+            <p class="aviso" role="status" th:if="${param.logout}">Cerraste sesión.</p>
+            <div class="campo">
+                <label for="username">Correo institucional</label>
+                <input id="username" name="username" type="email" autocomplete="username" required>
+            </div>
+            <div class="campo">
+                <label for="password">Contraseña</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            <button class="boton" type="submit">Ingresar</button>
+        </form>
+
+        <!-- MOCK: solo Nivel 1. Borrar este bloque al integrar Spring Security. -->
+        <aside class="vista-previa" aria-label="Vista previa por rol">
+            <strong>Vista previa (solo desarrollo)</strong>
+            <p class="texto-secundario">Entra directo con un rol para revisar su interfaz:</p>
+            <div class="acciones">
+                <a th:href="@{/vista-previa/ESTUDIANTE}">Estudiante</a>
+                <a th:href="@{/vista-previa/SEGURIDAD}">Seguridad</a>
+                <a th:href="@{/vista-previa/OFICINA_OBJETOS_PERDIDOS}">Oficina</a>
+            </div>
+        </aside>
+    </div>
+</main>
+</body>
+</html>
