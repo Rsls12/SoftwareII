@@ -8,8 +8,15 @@ Sistema de objetos perdidos y encontrados del campus. Spring Boot 4 + Thymeleaf,
 ./mvnw spring-boot:run        (Windows: mvnw.cmd spring-boot:run)
 ```
 
-Abrir http://localhost:8080/login. En el Nivel 1 no hay login real: usa los enlaces de "Vista previa"
-para entrar como Estudiante, Seguridad u Oficina.
+Abrir http://localhost:8080/login e iniciar sesión con uno de los usuarios de ejemplo. Cada uno ve un inicio distinto:
+
+| Rol | Correo |
+|---|---|
+| Estudiante | `ana.torres@universidad.edu.pe` |
+| Seguridad | `jorge.quispe@universidad.edu.pe` |
+| Oficina | `lucia.paredes@universidad.edu.pe` |
+
+Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mientras no haya base de datos.
 
 ## Estructura
 
@@ -17,7 +24,9 @@ para entrar como Estudiante, Seguridad u Oficina.
 |---|---|
 | `model/` | Clases y enums del diagrama UML (Objeto, Usuario, EstadoObjeto...) |
 | `servicio/` | **MOCK**: datos en memoria. El backend cambia las listas por repositorios JPA |
+| `seguridad/` | Spring Security: login, logout y rutas por rol (`SeguridadConfig`), y el puente con los usuarios (`UsuarioDetailsService`) |
 | `controlador/PantallaController` | Abre cada pantalla. No tiene reglas de negocio |
+| `controlador/SesionController` | Muestra el login. El POST `/login` y el POST `/logout` los procesa Spring Security |
 | `templates/` | Vistas Thymeleaf. `fragmentos.html` tiene las piezas reutilizables |
 | `static/css/` | `tokens.css` (colores, tamaños) y `app.css` (estilos) |
 
@@ -26,10 +35,13 @@ para entrar como Estudiante, Seguridad u Oficina.
 Todo lo que dice `MOCK` en el código es temporal:
 
 1. `ObjetoService` y `UsuarioService`: mantener los métodos públicos, cambiar las listas por JPA.
-2. Login/logout: Spring Security con form login en `/login` (campos `username` y `password`) y `POST /logout`.
-3. Borrar `/vista-previa/{rol}` del controlador y el bloque "Vista previa" de `login.html`.
-4. Fotos: hoy se guardan como data URL en memoria (`aImagenUrl` del controlador).
-5. Permisos por rol (quién puede editar, cambiar estado, ver entregas): hoy la vista solo oculta botones.
+2. Contraseñas: hoy los usuarios de ejemplo comparten `ufound.mock.clave`. Con la BD, `UsuarioDetailsService` lee el hash BCrypt de cada usuario.
+3. Fotos: hoy se guardan como data URL en memoria (`aImagenUrl` del controlador).
+4. Permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte): hoy la vista solo oculta botones.
+
+Ya está hecho (Sprint 1, HU-01 a HU-03): login y logout con Spring Security, sesión por usuario y rutas por rol
+(`/entregas` y cambiar estado solo Oficina; registrar objeto solo Estudiante y Seguridad). Los formularios con
+`th:action` ya envían el token CSRF solos; un formulario nuevo con `action` a secas daría 403.
 
 ## Niveles de la interfaz
 

@@ -9,5 +9,5 @@
 - Navegación de staff por debajo de 1024px: definir si se pasa a `<details>` o se mantiene la barra inferior.
 
 ## Para backend (no es frontend)
-- Restringir rutas por rol: hoy Seguridad abre `/entregas` y Oficina abre `/objetos/nuevo`.
+- ~~Restringir rutas por rol~~: hecho en `SeguridadConfig`. Falta una página propia para el 403 (hoy sale la de error por defecto).
 - ¿Seguridad puede editar o eliminar los objetos encontrados que registró? Hoy ve esos botones.

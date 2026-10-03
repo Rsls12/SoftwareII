@@ -326,12 +326,3 @@ img.detalle__foto { border: 0; }
 .login { display: grid; place-items: center; min-height: 100dvh; padding: var(--sp-4); }
 .login__caja { display: grid; gap: var(--sp-6); width: 100%; max-width: 24rem; }
 .login__marca { font-size: var(--fs-2xl); letter-spacing: 0.08em; }
-
-.vista-previa {
-  display: grid;
-  gap: var(--sp-2);
-  padding: var(--sp-4);
-  font-size: var(--fs-sm);
-  border: 1px dashed var(--c-border-strong);
-  border-radius: var(--radius-card);
-}

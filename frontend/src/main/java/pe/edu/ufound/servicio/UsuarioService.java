@@ -1,14 +1,17 @@
 package pe.edu.ufound.servicio;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import pe.edu.ufound.model.RolUsuario;
 import pe.edu.ufound.model.Usuario;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * MOCK (Nivel 1, solo frontend).
- * El backend reemplaza esta clase: el usuario actual lo dará Spring Security tras el login.
+ * MOCK: los usuarios están en una lista en memoria.
+ * El backend mantiene los mismos métodos y cambia la lista por un repositorio JPA.
  */
 @Service
 public class UsuarioService {
@@ -19,16 +22,22 @@ public class UsuarioService {
             new Usuario(3L, "Lucía", "Paredes Vega", "lucia.paredes@universidad.edu.pe", RolUsuario.OFICINA_OBJETOS_PERDIDOS)
     );
 
-    // Nota: un solo usuario para toda la app (sin sesiones); Spring Security lo resuelve por sesión.
-    private Usuario usuarioActual = usuarios.get(0);
-
+    /** El usuario que inició sesión (HU-01). Cada sesión del navegador tiene el suyo. */
     public Usuario usuarioActual() {
-        return usuarioActual;
+        Authentication sesion = SecurityContextHolder.getContext().getAuthentication();
+        if (sesion == null) {
+            throw new IllegalStateException("No hay una sesión iniciada.");
+        }
+        return buscarPorCorreo(sesion.getName())
+                .orElseThrow(() -> new IllegalStateException("La sesión no corresponde a un usuario del sistema."));
     }
 
-    /** Solo para revisar la vista de cada rol durante el Nivel 1. */
-    public void usarRol(RolUsuario rol) {
-        usuarioActual = buscarPorRol(rol);
+    public Optional<Usuario> buscarPorCorreo(String correo) {
+        if (correo == null) {
+            return Optional.empty();
+        }
+        String buscado = correo.trim();
+        return usuarios.stream().filter(u -> u.getCorreo().equalsIgnoreCase(buscado)).findFirst();
     }
 
     public Usuario buscarPorRol(RolUsuario rol) {

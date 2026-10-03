@@ -15,6 +15,7 @@ import java.util.Base64;
 /**
  * Abre cada pantalla del Sprint 1 y le pasa los datos que muestra.
  * No tiene reglas de negocio: todo eso está en los servicios.
+ * Todas sus rutas piden sesión iniciada (ver SeguridadConfig); el login está en SesionController.
  */
 @Controller
 public class PantallaController {
@@ -35,31 +36,6 @@ public class PantallaController {
         model.addAttribute("categorias", CategoriaObjeto.values());
         model.addAttribute("pabellones", Pabellon.values());
         model.addAttribute("estados", EstadoObjeto.values());
-    }
-
-    // ---------- Sesión (HU-01, HU-02) ----------
-
-    @GetMapping("/login")
-    public String login() {
-        return "login";
-    }
-
-    // MOCK: Spring Security procesará el POST /login y el POST /logout. Por ahora solo navegan.
-    @PostMapping("/login")
-    public String entrar() {
-        return "redirect:/";
-    }
-
-    @PostMapping("/logout")
-    public String salir() {
-        return "redirect:/login";
-    }
-
-    // MOCK: solo sirve para revisar la vista de cada rol en el Nivel 1. Se borra al integrar Spring Security.
-    @GetMapping("/vista-previa/{rol}")
-    public String vistaPrevia(@PathVariable RolUsuario rol) {
-        usuarios.usarRol(rol);
-        return "redirect:/";
     }
 
     // ---------- Inicio según rol (HU-03) y objetos recientes (HU-19) ----------
