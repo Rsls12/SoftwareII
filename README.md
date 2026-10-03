@@ -5,8 +5,11 @@ Sistema de objetos perdidos y encontrados del campus. Spring Boot 4 + Thymeleaf,
 ## Cómo correrlo
 
 ```
+cd backend
 ./mvnw spring-boot:run        (Windows: mvnw.cmd spring-boot:run)
 ```
+
+Es una sola aplicación: `backend/` la compila y la levanta, y al hacerlo empaqueta las vistas y los estilos de `frontend/`.
 
 Abrir http://localhost:8080/login e iniciar sesión con uno de los usuarios de ejemplo. Cada uno ve un inicio distinto:
 
@@ -20,6 +23,8 @@ Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mien
 
 ## Estructura
 
+**`backend/`**: proyecto Spring Boot (Java). Los paquetes están en `backend/src/main/java/pe/edu/ufound/`.
+
 | Carpeta | Qué hay |
 |---|---|
 | `model/` | Clases y enums del diagrama UML (Objeto, Usuario, EstadoObjeto...) |
@@ -27,8 +32,17 @@ Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mien
 | `seguridad/` | Spring Security: login, logout y rutas por rol (`SeguridadConfig`), y el puente con los usuarios (`UsuarioDetailsService`) |
 | `controlador/PantallaController` | Abre cada pantalla. No tiene reglas de negocio |
 | `controlador/SesionController` | Muestra el login. El POST `/login` y el POST `/logout` los procesa Spring Security |
+| `src/main/resources/application.properties` | Configuración de la aplicación |
+| `src/test/` | Pruebas |
+| `pom.xml` | Dependencias. También indica que las vistas y estilos se toman de `../frontend` |
+
+**`frontend/`**: lo que ve el usuario. No tiene Java.
+
+| Carpeta | Qué hay |
+|---|---|
 | `templates/` | Vistas Thymeleaf. `fragmentos.html` tiene las piezas reutilizables |
 | `static/css/` | `tokens.css` (colores, tamaños) y `app.css` (estilos) |
+| `docs/` | Dirección visual y pendientes de la interfaz |
 
 ## Para el equipo de backend
 

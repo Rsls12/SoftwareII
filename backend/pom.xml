@@ -67,6 +67,19 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<!-- Las vistas y los estilos viven en ../frontend y se empaquetan con la aplicación. -->
+			<resource>
+				<directory>../frontend</directory>
+				<includes>
+					<include>templates/**</include>
+					<include>static/**</include>
+				</includes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
