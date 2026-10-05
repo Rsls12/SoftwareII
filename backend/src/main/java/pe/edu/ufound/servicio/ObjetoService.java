@@ -4,34 +4,30 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import pe.edu.ufound.model.*;
+import pe.edu.ufound.repositorio.ObjetoRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * MOCK (Nivel 1, solo frontend): guarda todo en listas en memoria y se pierde al reiniciar.
- * El backend mantiene los mismos métodos y cambia las listas por repositorios JPA.
- * Las vistas y el controlador no necesitan cambiar.
- */
 @Service
 public class ObjetoService {
 
-    private final List<Objeto> objetos = new ArrayList<>();
+    private final ObjetoRepository repositorio;
     private final List<HistorialEstado> historial = new ArrayList<>();
     private final List<Entrega> entregas = new ArrayList<>();
-    private long siguienteIdObjeto = 1;
-    private long siguienteIdRegistro = 1; // para historial y entregas
+    private long siguienteIdRegistro = 1;
 
-    public ObjetoService(UsuarioService usuarios) {
-        cargarDatosDeEjemplo(usuarios);
+    public ObjetoService(ObjetoRepository repositorio, UsuarioService usuarios) {
+        this.repositorio = repositorio;
+        if (repositorio.count() == 0) {
+            cargarDatosDeEjemplo(usuarios);
+        }
     }
 
-    /** Búsqueda con filtros (HU-16, HU-17). Un filtro en null significa "todos". */
     public List<Objeto> buscar(String texto, TipoObjeto tipo, CategoriaObjeto categoria,
                                Pabellon ubicacion, EstadoObjeto estado) {
-        // Nota: no ignora tildes ("revision" no encuentra "revisión"); la BD lo hará con collation.
         String buscado = texto == null ? "" : texto.trim().toLowerCase();
         return activosMasRecientesPrimero().stream()
                 .filter(o -> buscado.isEmpty()
@@ -44,63 +40,60 @@ public class ObjetoService {
                 .toList();
     }
 
-    /** Últimos objetos registrados (HU-19). */
     public List<Objeto> recientes(int cantidad) {
         return activosMasRecientesPrimero().stream().limit(cantidad).toList();
     }
 
-    /** Reportes del usuario (HU-18). */
     public List<Objeto> deUsuario(Usuario usuario) {
-        return activosMasRecientesPrimero().stream().filter(o -> o.esDe(usuario)).toList();
+        return repositorio.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(usuario);
     }
 
     public Objeto obtener(Long id) {
-        return objetos.stream()
-                .filter(o -> o.getIdObjeto().equals(id))
-                .findFirst()
+        return repositorio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * Registra un objeto (HU-04 a HU-11). La fecha y hora se ponen solas (HU-07).
-     * Si lo registra seguridad es ENCONTRADO; si no, PERDIDO.
-     */
     public Objeto registrar(String nombre, CategoriaObjeto categoria, Pabellon ubicacion,
                             String descripcion, String imagenUrl, Usuario autor) {
-        TipoObjeto tipo = autor.esSeguridad() ? TipoObjeto.ENCONTRADO : TipoObjeto.PERDIDO;
-        Objeto objeto = new Objeto(siguienteIdObjeto++, nombre, descripcion, tipo, categoria,
-                ubicacion, imagenUrl, LocalDateTime.now(), autor);
-        objetos.add(objeto);
-        return objeto;
+        if (autor != null && autor.esSeguridad()) {
+            return repositorio.save(Objeto.reportarEncontrado(nombre, descripcion, categoria, ubicacion, imagenUrl, autor));
+        }
+        return registrarPerdido(nombre, categoria, ubicacion, descripcion, imagenUrl, autor);
     }
 
-    /** HU-21. */
+    public Objeto registrarPerdido(String nombre, CategoriaObjeto categoria, Pabellon ubicacion,
+                                   String descripcion, String imagenUrl, Usuario estudiante) {
+        return repositorio.save(Objeto.reportarPerdido(nombre, descripcion, categoria, ubicacion, imagenUrl, estudiante));
+    }
+
     public void editar(Long id, String descripcion, Pabellon ubicacion, String imagenUrl) {
-        obtener(id).editar(descripcion, ubicacion, imagenUrl);
+        Objeto objeto = obtener(id);
+        objeto.editar(descripcion, ubicacion, imagenUrl);
+        repositorio.save(objeto);
     }
 
-    /** HU-20. */
     public void eliminar(Long id) {
-        obtener(id).desactivar();
+        Objeto objeto = obtener(id);
+        objeto.desactivar();
+        repositorio.save(objeto);
     }
 
-    /** HU-14: cambia el estado y deja el cambio en el historial (HU-15). */
     public void cambiarEstado(Long id, EstadoObjeto nuevoEstado, String observacion, Usuario realizadoPor) {
         Objeto objeto = obtener(id);
-        historial.add(new HistorialEstado(siguienteIdRegistro++, objeto, objeto.getEstado(), nuevoEstado,
-                LocalDateTime.now(), observacion, realizadoPor));
+        EstadoObjeto anterior = objeto.getEstado();
         objeto.cambiarEstado(nuevoEstado);
+        repositorio.save(objeto);
+        historial.add(new HistorialEstado(siguienteIdRegistro++, objeto, anterior, nuevoEstado,
+                LocalDateTime.now(), observacion, realizadoPor));
     }
 
-    /** HU-15, del cambio más reciente al más antiguo. */
     public List<HistorialEstado> historialDe(Objeto objeto) {
         return historial.stream()
-                .filter(h -> h.getObjeto() == objeto)
+                .filter(h -> h.getObjeto().getIdObjeto().equals(objeto.getIdObjeto()))
                 .sorted(Comparator.comparing(HistorialEstado::getFechaHora).reversed())
                 .toList();
     }
 
-    /** HU-22, de la entrega más reciente a la más antigua. */
     public List<Entrega> entregas() {
         return entregas.stream()
                 .sorted(Comparator.comparing(Entrega::getFechaHoraEntrega).reversed())
@@ -108,13 +101,8 @@ public class ObjetoService {
     }
 
     private List<Objeto> activosMasRecientesPrimero() {
-        return objetos.stream()
-                .filter(Objeto::isActivo)
-                .sorted(Comparator.comparing(Objeto::getFechaHoraReporte).reversed())
-                .toList();
+        return repositorio.findByActivoTrueOrderByFechaHoraReporteDesc();
     }
-
-    // ---------------- Datos de ejemplo ----------------
 
     private void cargarDatosDeEjemplo(UsuarioService usuarios) {
         Usuario ana = usuarios.buscarPorRol(RolUsuario.ESTUDIANTE);
@@ -147,14 +135,12 @@ public class ObjetoService {
         cambiarEstado(llaves.getIdObjeto(), EstadoObjeto.ENTREGADO, "Entregado a su dueña.", lucia);
         cambiarEstado(cuaderno.getIdObjeto(), EstadoObjeto.ARCHIVADO, "Más de 3 meses sin novedades.", lucia);
 
-        entregas.add(new Entrega(siguienteIdRegistro++, llaves, "María Fernández López", "DNI 71234567",
-                ahora.minusDays(15), "Describió correctamente el llavero.", lucia));
+        entregas.add(new Entrega(siguienteIdRegistro++, obtener(llaves.getIdObjeto()), "María Fernández López",
+                "DNI 71234567", ahora.minusDays(15), "Describió correctamente el llavero.", lucia));
     }
 
     private Objeto ejemplo(String nombre, String descripcion, TipoObjeto tipo, CategoriaObjeto categoria,
                            Pabellon ubicacion, LocalDateTime fecha, Usuario autor) {
-        Objeto objeto = new Objeto(siguienteIdObjeto++, nombre, descripcion, tipo, categoria, ubicacion, null, fecha, autor);
-        objetos.add(objeto);
-        return objeto;
+        return repositorio.save(new Objeto(nombre, descripcion, tipo, categoria, ubicacion, null, fecha, autor));
     }
 }

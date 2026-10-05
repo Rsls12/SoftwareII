@@ -1,19 +1,45 @@
 package pe.edu.ufound.model;
 
-/**
- * Usuario del sistema (clase Usuario del UML).
- * La contraseña no está aquí a propósito: el login lo maneja el backend con Spring Security.
- */
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+@Entity
+@Table(name = "usuario")
 public class Usuario {
 
-    private final Long idUsuario;
-    private final String nombres;
-    private final String apellidos;
-    private final String correo;
-    private final RolUsuario rol;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long idUsuario;
 
-    public Usuario(Long idUsuario, String nombres, String apellidos, String correo, RolUsuario rol) {
-        this.idUsuario = idUsuario;
+    @Column(nullable = false, length = 100)
+    private String nombres;
+
+    @Column(nullable = false, length = 100)
+    private String apellidos;
+
+    @Column(nullable = false, unique = true, length = 150)
+    private String correo;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 30)
+    private RolUsuario rol;
+
+    @Column(nullable = false)
+    private boolean activo = true;
+
+    protected Usuario() {
+    }
+
+    public Usuario(String nombres, String apellidos, String correo, RolUsuario rol) {
         this.nombres = nombres;
         this.apellidos = apellidos;
         this.correo = correo;
@@ -36,6 +62,14 @@ public class Usuario {
         return tieneRol(RolUsuario.OFICINA_OBJETOS_PERDIDOS);
     }
 
+    public void activar() {
+        this.activo = true;
+    }
+
+    public void desactivar() {
+        this.activo = false;
+    }
+
     public String getNombreCompleto() {
         return nombres + " " + apellidos;
     }
@@ -45,4 +79,5 @@ public class Usuario {
     public String getApellidos() { return apellidos; }
     public String getCorreo() { return correo; }
     public RolUsuario getRol() { return rol; }
+    public boolean isActivo() { return activo; }
 }
