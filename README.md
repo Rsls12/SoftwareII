@@ -53,6 +53,14 @@ Todo lo que dice `MOCK` en el código es temporal:
 3. Fotos: hoy se guardan como data URL en memoria (`aImagenUrl` del controlador).
 4. Permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte): hoy la vista solo oculta botones.
 
+Sprint 1, HU-04, HU-05 y HU-09 (Rodrigo Arcos):
+
+- `Objeto` y `Usuario` ya son entidades JPA (tablas `objeto` y `usuario`). Base H2 embebida mientras no haya servidor de BD.
+- `categoria`, `ubicacion`, `tipo` y `estado` se guardan como varchar, sin tabla propia (nota del diagrama). `GET /api/categorias` las lista.
+- `POST /objetos` guarda el objeto en BD; el estudiante registra PERDIDO y seguridad ENCONTRADO.
+- Fotos: `AlmacenamientoImagenes` (interfaz) con `AlmacenamientoLocal` en `backend/uploads/imagenes`, servidas en `/imagenes/**`. Se valida el tipo real del archivo (JPG, PNG, GIF, WEBP).
+- `HistorialEstado` y `Entrega` siguen en memoria (HU de otros integrantes).
+
 Ya está hecho (Sprint 1, HU-01 a HU-03): login y logout con Spring Security, sesión por usuario y rutas por rol
 (`/entregas` y cambiar estado solo Oficina; registrar objeto solo Estudiante y Seguridad). Los formularios con
 `th:action` ya envían el token CSRF solos; un formulario nuevo con `action` a secas daría 403.

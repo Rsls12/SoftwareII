@@ -5,12 +5,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import pe.edu.ufound.almacenamiento.AlmacenamientoImagenes;
 import pe.edu.ufound.model.*;
 import pe.edu.ufound.servicio.ObjetoService;
 import pe.edu.ufound.servicio.UsuarioService;
-
-import java.io.IOException;
-import java.util.Base64;
 
 /**
  * Abre cada pantalla del Sprint 1 y le pasa los datos que muestra.
@@ -22,10 +20,12 @@ public class PantallaController {
 
     private final ObjetoService objetos;
     private final UsuarioService usuarios;
+    private final AlmacenamientoImagenes imagenes;
 
-    public PantallaController(ObjetoService objetos, UsuarioService usuarios) {
+    public PantallaController(ObjetoService objetos, UsuarioService usuarios, AlmacenamientoImagenes imagenes) {
         this.objetos = objetos;
         this.usuarios = usuarios;
+        this.imagenes = imagenes;
     }
 
     /** Datos que usan todas las pantallas: el usuario actual y las opciones de los selects. */
@@ -58,9 +58,15 @@ public class PantallaController {
     public String registrar(@RequestParam String nombre, @RequestParam CategoriaObjeto categoria,
                             @RequestParam Pabellon ubicacion, @RequestParam String descripcion,
                             @RequestParam(required = false) MultipartFile foto,
-                            RedirectAttributes redirect) throws IOException {
-        Objeto objeto = objetos.registrar(nombre, categoria, ubicacion, descripcion,
-                aImagenUrl(foto), usuarios.usuarioActual());
+                            RedirectAttributes redirect) {
+        String imagenUrl = imagenes.guardar(foto);
+        Objeto objeto;
+        try {
+            objeto = objetos.registrar(nombre, categoria, ubicacion, descripcion, imagenUrl, usuarios.usuarioActual());
+        } catch (RuntimeException e) {
+            imagenes.eliminar(imagenUrl);
+            throw e;
+        }
         redirect.addFlashAttribute("mensaje", "Listo, quedó registrado con el código " + objeto.getCodigo() + ".");
         return "redirect:/objetos/" + objeto.getIdObjeto();
     }
@@ -96,8 +102,8 @@ public class PantallaController {
     public String guardarEdicion(@PathVariable Long id, @RequestParam String descripcion,
                                  @RequestParam Pabellon ubicacion,
                                  @RequestParam(required = false) MultipartFile foto,
-                                 RedirectAttributes redirect) throws IOException {
-        objetos.editar(id, descripcion, ubicacion, aImagenUrl(foto));
+                                 RedirectAttributes redirect) {
+        objetos.editar(id, descripcion, ubicacion, imagenes.guardar(foto));
         redirect.addFlashAttribute("mensaje", "Cambios guardados.");
         return "redirect:/objetos/" + id;
     }
@@ -140,14 +146,5 @@ public class PantallaController {
     public String entregas(Model model) {
         model.addAttribute("entregas", objetos.entregas());
         return "entregas";
-    }
-
-    /** MOCK: guarda la foto dentro del texto (data URL). El backend la subirá a un almacenamiento real. */
-    private String aImagenUrl(MultipartFile foto) throws IOException {
-        if (foto == null || foto.isEmpty() || foto.getContentType() == null
-                || !foto.getContentType().startsWith("image/")) {
-            return null;
-        }
-        return "data:" + foto.getContentType() + ";base64," + Base64.getEncoder().encodeToString(foto.getBytes());
     }
 }
