@@ -157,6 +157,17 @@ class PantallasTest {
 
     @Test
     @WithUserDetails(SEGURIDAD)
+    void elInicioMuestraLosObjetosRecientes() throws Exception {
+        reporteDeAna("Termo negro", "Termo negro de acero con tapa gris");
+
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Objetos recientes")))
+                .andExpect(content().string(containsString("Termo negro")));
+    }
+
+    @Test
+    @WithUserDetails(SEGURIDAD)
     void misPublicacionesEsSoloParaEstudiantes() throws Exception {
         mvc.perform(get("/mis-publicaciones")).andExpect(status().isForbidden());
     }

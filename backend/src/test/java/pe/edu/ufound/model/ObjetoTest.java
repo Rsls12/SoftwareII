@@ -217,6 +217,21 @@ class ObjetoTest {
         assertEquals(antes.size() - 1, objetos.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(ana).size());
     }
 
+    // HU-19: los últimos objetos reportados, del más nuevo al más antiguo, sin los eliminados.
+    @Test
+    void recientesTraeLosUltimosObjetosActivos() {
+        Objeto retirado = objetos.save(Objeto.reportar("Polo blanco", "Polo blanco talla S con logo",
+                CategoriaObjeto.ROPA, Pabellon.PABELLON_D, null, conRol(RolUsuario.ESTUDIANTE)));
+        retirado.desactivar();
+        objetos.save(retirado);
+
+        List<Objeto> recientes = objetos.recientes(2);
+
+        assertEquals(2, recientes.size());
+        assertTrue(recientes.stream().noneMatch(o -> o.getIdObjeto().equals(retirado.getIdObjeto())));
+        assertFalse(recientes.get(0).getFechaHoraReporte().isBefore(recientes.get(1).getFechaHoraReporte()));
+    }
+
     private Usuario conRol(RolUsuario rol) {
         return usuarios.findFirstByRolOrderByIdUsuarioAsc(rol).orElseThrow();
     }
