@@ -38,7 +38,8 @@
             <div class="acciones" th:if="${objeto.isActivo() and objeto.esDe(yo)}">
                 <a class="boton boton--secundario" th:if="${objeto.puedeEditarlo(yo)}"
                    th:href="@{/objetos/{id}/editar(id=${objeto.idObjeto})}">Editar</a>
-                <form th:action="@{/objetos/{id}/eliminar(id=${objeto.idObjeto})}" method="post"
+                <form th:if="${objeto.puedeEliminarlo(yo)}"
+                      th:action="@{/objetos/{id}/eliminar(id=${objeto.idObjeto})}" method="post"
                       onsubmit="return confirm('¿Eliminar este reporte? Dejará de aparecer en las búsquedas.')">
                     <button class="boton boton--peligro" type="submit">Eliminar reporte</button>
                 </form>

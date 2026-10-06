@@ -207,6 +207,18 @@ public class Objeto {
         this.activo = false;
     }
 
+    // HU-20: solo el estudiante que hizo el reporte puede retirarlo del catálogo.
+    public boolean puedeEliminarlo(Usuario usuario) {
+        return activo && esDe(usuario) && usuario.esEstudiante();
+    }
+
+    public void eliminar(Usuario usuario) {
+        if (!puedeEliminarlo(usuario)) {
+            throw new OperacionNoPermitidaException();
+        }
+        desactivar();
+    }
+
     public boolean esDe(Usuario usuario) {
         return usuario != null && reportadoPor.getIdUsuario().equals(usuario.getIdUsuario());
     }

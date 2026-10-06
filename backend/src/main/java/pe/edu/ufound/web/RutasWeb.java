@@ -135,7 +135,7 @@ public class RutasWeb {
     }
 
     // ---------- Editar y eliminar reporte propio (HU-20, HU-21) ----------
-    // Los permisos (solo el dueño) siguen pendientes; aquí la vista solo oculta los botones.
+    // Eliminar ya valida que sea el dueño (Objeto.eliminar); editar sigue pendiente y la vista solo oculta el botón.
 
     private ServerResponse editar(ServerRequest peticion) {
         Map<String, Object> modelo = modelo(peticion, yo(peticion));
@@ -153,7 +153,7 @@ public class RutasWeb {
 
     private ServerResponse eliminar(ServerRequest peticion) {
         Objeto objeto = objetoDe(peticion);
-        objeto.desactivar();
+        objeto.eliminar(yo(peticion));
         objetos.save(objeto);
         return redirigir(peticion, "/mis-publicaciones", "Reporte eliminado.");
     }

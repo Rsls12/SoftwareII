@@ -217,6 +217,26 @@ class ObjetoTest {
         assertEquals(antes.size() - 1, objetos.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(ana).size());
     }
 
+    // HU-20: nadie más que el estudiante dueño puede eliminar el reporte.
+    @Test
+    void soloElEstudianteDuenoEliminaSuReporte() {
+        Usuario ana = conRol(RolUsuario.ESTUDIANTE);
+        Usuario guardia = conRol(RolUsuario.SEGURIDAD);
+        Objeto deAna = Objeto.reportar("Billetera", "Billetera marrón de cuero", CategoriaObjeto.ACCESORIOS,
+                Pabellon.PABELLON_B, null, ana);
+        Objeto deSeguridad = Objeto.reportar("Mochila", "Mochila negra con llavero", CategoriaObjeto.OTROS,
+                Pabellon.PABELLON_A, null, guardia);
+
+        assertThrows(OperacionNoPermitidaException.class, () -> deAna.eliminar(guardia));
+        assertThrows(OperacionNoPermitidaException.class, () -> deAna.eliminar(conRol(RolUsuario.OFICINA_OBJETOS_PERDIDOS)));
+        assertThrows(OperacionNoPermitidaException.class, () -> deSeguridad.eliminar(guardia));
+        assertTrue(deAna.isActivo());
+
+        deAna.eliminar(ana);
+        assertFalse(deAna.isActivo());
+        assertThrows(OperacionNoPermitidaException.class, () -> deAna.eliminar(ana));
+    }
+
     // HU-19: los últimos objetos reportados, del más nuevo al más antiguo, sin los eliminados.
     @Test
     void recientesTraeLosUltimosObjetosActivos() {

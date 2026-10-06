@@ -220,6 +220,17 @@ class PantallasTest {
     }
 
     @Test
+    @WithUserDetails(SEGURIDAD)
+    void nadieMasPuedeEliminarElReporteDeOtro() throws Exception {
+        Long id = reporteDeAna("Casco de bici", "Casco de bici blanco con luz trasera").getIdObjeto();
+
+        mvc.perform(get("/objetos/" + id)).andExpect(content().string(not(containsString("Eliminar reporte"))));
+        mvc.perform(post("/objetos/" + id + "/eliminar").with(csrf())).andExpect(status().isForbidden());
+
+        assertTrue(objetos.findById(id).orElseThrow().isActivo());
+    }
+
+    @Test
     @WithUserDetails(ESTUDIANTE)
     void unObjetoQueNoExisteDa404() throws Exception {
         mvc.perform(get("/objetos/999999")).andExpect(status().isNotFound());
