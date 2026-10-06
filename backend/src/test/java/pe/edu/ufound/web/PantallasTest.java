@@ -246,6 +246,26 @@ class PantallasTest {
                 .andExpect(content().string(containsString("Llaves con llavero de Pikachu")));
     }
 
+    // HU-22: fecha, objeto, reclamante y encargado, con la entrega más reciente primero.
+    @Test
+    @WithUserDetails(OFICINA)
+    void elHistorialDeEntregasMuestraLaMasRecientePrimero() throws Exception {
+        Objeto mochila = reporteDeAna("Mochila celeste", "Mochila celeste con parche de gato");
+        mochila.entregar("Rosa Medina Salas", "DNI 72345678", "Reconoció el parche",
+                usuarios.findByCorreoIgnoreCase(OFICINA).orElseThrow());
+        objetos.save(mochila);
+
+        String pagina = mvc.perform(get("/entregas"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(mochila.getCodigo())))
+                .andExpect(content().string(containsString("Rosa Medina Salas")))
+                .andExpect(content().string(containsString("DNI 72345678")))
+                .andExpect(content().string(containsString("Lucía Paredes Vega")))
+                .andReturn().getResponse().getContentAsString();
+
+        assertTrue(pagina.indexOf("Rosa Medina Salas") < pagina.indexOf("María Fernández López"));
+    }
+
     private Objeto reporteDeAna(String nombre, String descripcion) {
         return objetos.save(Objeto.reportar(nombre, descripcion, CategoriaObjeto.OTROS, Pabellon.PABELLON_A, null,
                 usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.ESTUDIANTE).orElseThrow()));
