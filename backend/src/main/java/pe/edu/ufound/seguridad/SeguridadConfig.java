@@ -4,10 +4,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import pe.edu.ufound.model.RolUsuario;
+import pe.edu.ufound.model.Usuario;
+import pe.edu.ufound.repositorio.UsuarioRepository;
 
 /**
  * Reglas de acceso del Sprint 1: inicio de sesión (HU-01), cierre de sesión (HU-02)
@@ -41,5 +46,18 @@ public class SeguridadConfig {
     @Bean
     public PasswordEncoder cifrador() {
         return new BCryptPasswordEncoder();
+    }
+
+    // HU-01: el correo es el nombre de usuario, la contraseña es el hash BCrypt de la tabla usuario
+    // y el rol del modelo pasa a ser el rol de la sesión.
+    @Bean
+    public UserDetailsService usuariosDeLaSesion(UsuarioRepository usuarios) {
+        return correo -> usuarios.findByCorreoIgnoreCase(correo.trim())
+                .filter(Usuario::tieneContrasena)
+                .map(usuario -> User.withUsername(usuario.getCorreo())
+                        .password(usuario.getContrasena())
+                        .roles(usuario.getRol().name())
+                        .build())
+                .orElseThrow(() -> new UsernameNotFoundException("No existe un usuario con ese correo"));
     }
 }

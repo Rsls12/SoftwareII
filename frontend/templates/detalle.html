@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- HU-12: detalle. HU-13: estado. HU-14: cambiar estado (Oficina). HU-15: historial (Oficina).
-     HU-20 / HU-21: eliminar / editar (dueño del reporte). -->
+     HU-20 / HU-21: eliminar / editar (dueño del reporte). HU-22: datos de la entrega (Oficina). -->
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos :: head(${objeto.nombre})}"></head>
 <body class="app">
@@ -51,7 +51,26 @@
 
     <!-- ===== Solo Oficina ===== -->
     <th:block th:if="${yo.esOficina()}">
-        <section class="seccion" aria-labelledby="titulo-estado">
+        <!-- HU-22: un objeto entregado es un caso cerrado y ya no cambia de estado. -->
+        <section class="seccion" aria-labelledby="titulo-entrega" th:if="${entrega != null}">
+            <h2 id="titulo-entrega">Entrega</h2>
+            <div class="panel">
+                <dl class="datos">
+                    <dt>Reclamante</dt>  <dd th:text="${entrega.nombreReclamante}">María Fernández</dd>
+                    <dt>Documento</dt>   <dd th:text="${entrega.documentoReclamante}">DNI 71234567</dd>
+                    <dt>Encargado</dt>   <dd th:text="${entrega.encargado.nombreCompleto}">Lucía Paredes</dd>
+                    <dt>Entregado</dt>   <dd th:text="${#temporals.format(entrega.fechaHoraEntrega, 'dd/MM/yyyy HH:mm')}">01/10/2026</dd>
+                    <dt th:if="${entrega.observacion}">Observación</dt>
+                    <dd th:if="${entrega.observacion}" th:text="${entrega.observacion}">Observación</dd>
+                </dl>
+                <p class="campo__ayuda">
+                    Caso cerrado: un objeto entregado ya no cambia de estado.
+                    <a th:href="@{/entregas}">Ver historial de entregas</a>
+                </p>
+            </div>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-estado" th:if="${entrega == null}">
             <h2 id="titulo-estado">Cambiar estado</h2>
             <form class="formulario panel" th:action="@{/objetos/{id}/estado(id=${objeto.idObjeto})}" method="post">
                 <div class="campo">
@@ -66,10 +85,47 @@
                     <input id="observacion" name="observacion" type="text" maxlength="200"
                            placeholder="Ej. Recibido de seguridad">
                 </div>
+                <!-- HU-22: solo se piden al elegir "Entregado" (lo valida Objeto.entregar). -->
+                <fieldset id="datos-entrega" class="grupo-campos">
+                    <legend>Datos de la entrega</legend>
+                    <p class="campo__ayuda">Obligatorios para pasar el objeto a "Entregado".</p>
+                    <div class="campo">
+                        <label for="nombreReclamante">Nombre de quien reclama</label>
+                        <input id="nombreReclamante" name="nombreReclamante" type="text" maxlength="150"
+                               autocomplete="off" data-obligatorio>
+                    </div>
+                    <div class="campo">
+                        <label for="documentoReclamante">Documento de quien reclama</label>
+                        <input id="documentoReclamante" name="documentoReclamante" type="text" maxlength="30"
+                               autocomplete="off" placeholder="Ej. DNI 71234567" data-obligatorio>
+                    </div>
+                    <div class="campo">
+                        <label for="encargado">Encargado de la entrega</label>
+                        <input id="encargado" type="text" th:value="${yo.nombreCompleto}" readonly>
+                        <p class="campo__ayuda">Se registra a quien inició sesión.</p>
+                    </div>
+                </fieldset>
                 <div class="acciones">
                     <button class="boton" type="submit">Guardar estado</button>
                 </div>
             </form>
+            <script>
+                // Los datos de la entrega solo se muestran y se exigen cuando el nuevo estado es "Entregado".
+                (function () {
+                    var estado = document.getElementById('estado');
+                    var datos = document.getElementById('datos-entrega');
+                    function actualizar() {
+                        var entregando = estado.value === 'ENTREGADO';
+                        datos.hidden = !entregando;
+                        datos.disabled = !entregando;
+                        datos.querySelectorAll('[data-obligatorio]').forEach(function (campo) {
+                            campo.required = entregando;
+                        });
+                    }
+                    estado.addEventListener('change', actualizar);
+                    actualizar();
+                })();
+            </script>
         </section>
 
         <section class="seccion" aria-labelledby="titulo-historial">

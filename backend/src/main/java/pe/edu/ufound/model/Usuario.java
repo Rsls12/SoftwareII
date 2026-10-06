@@ -28,6 +28,10 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 150)
     private String correo;
 
+    // HU-01: hash BCrypt de la contraseña; el texto de la contraseña nunca se guarda.
+    @Column(length = 100)
+    private String contrasena;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false, length = 30)
@@ -39,11 +43,17 @@ public class Usuario {
     protected Usuario() {
     }
 
-    public Usuario(String nombres, String apellidos, String correo, RolUsuario rol) {
+    public Usuario(String nombres, String apellidos, String correo, String contrasena, RolUsuario rol) {
         this.nombres = nombres;
         this.apellidos = apellidos;
         this.correo = correo;
+        this.contrasena = contrasena;
         this.rol = rol;
+    }
+
+    // HU-01: sin contraseña registrada no se puede iniciar sesión.
+    public boolean tieneContrasena() {
+        return contrasena != null && !contrasena.isBlank();
     }
 
     public boolean tieneRol(RolUsuario rol) {
@@ -78,6 +88,7 @@ public class Usuario {
     public String getNombres() { return nombres; }
     public String getApellidos() { return apellidos; }
     public String getCorreo() { return correo; }
+    public String getContrasena() { return contrasena; }
     public RolUsuario getRol() { return rol; }
     public boolean isActivo() { return activo; }
 }

@@ -2,7 +2,6 @@ package pe.edu.ufound.seguridad;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockHttpSession;
@@ -12,6 +11,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static pe.edu.ufound.DatosDePrueba.CLAVE_ESTUDIANTE;
+import static pe.edu.ufound.DatosDePrueba.CLAVE_OFICINA;
+import static pe.edu.ufound.DatosDePrueba.CLAVE_SEGURIDAD;
+import static pe.edu.ufound.DatosDePrueba.SIN_CONTRASENA;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
@@ -32,9 +35,6 @@ class SesionTest {
     @Autowired
     private MockMvc mvc;
 
-    @Value("${ufound.mock.clave}")
-    private String clave;
-
     // ---------- HU-01 ----------
 
     @Test
@@ -53,16 +53,16 @@ class SesionTest {
 
     @Test
     void credencialesValidasDanAccesoYLlevanAlInicio() throws Exception {
-        mvc.perform(formLogin().user(ESTUDIANTE).password(clave))
+        mvc.perform(formLogin().user(ESTUDIANTE).password(CLAVE_ESTUDIANTE))
                 .andExpect(authenticated().withUsername(ESTUDIANTE).withRoles("ESTUDIANTE"))
                 .andExpect(redirectedUrl("/"));
     }
 
     @Test
     void cadaUsuarioEntraConSuRol() throws Exception {
-        mvc.perform(formLogin().user(SEGURIDAD).password(clave))
+        mvc.perform(formLogin().user(SEGURIDAD).password(CLAVE_SEGURIDAD))
                 .andExpect(authenticated().withRoles("SEGURIDAD"));
-        mvc.perform(formLogin().user(OFICINA).password(clave))
+        mvc.perform(formLogin().user(OFICINA).password(CLAVE_OFICINA))
                 .andExpect(authenticated().withRoles("OFICINA_OBJETOS_PERDIDOS"));
     }
 
@@ -75,7 +75,27 @@ class SesionTest {
 
     @Test
     void correoDesconocidoDaElMismoErrorQueUnaContrasenaIncorrecta() throws Exception {
-        mvc.perform(formLogin().user("nadie@universidad.edu.pe").password(clave))
+        mvc.perform(formLogin().user("nadie@universidad.edu.pe").password(CLAVE_ESTUDIANTE))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
+    }
+
+    @Test
+    void cadaUsuarioEntraSoloConSuPropiaContrasena() throws Exception {
+        mvc.perform(formLogin().user(SEGURIDAD).password(CLAVE_ESTUDIANTE))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
+        mvc.perform(formLogin().user(OFICINA).password(CLAVE_SEGURIDAD))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
+    }
+
+    @Test
+    void unUsuarioSinContrasenaRegistradaNoEntra() throws Exception {
+        mvc.perform(formLogin().user(SIN_CONTRASENA).password(""))
+                .andExpect(unauthenticated())
+                .andExpect(redirectedUrl("/login?error"));
+        mvc.perform(formLogin().user(SIN_CONTRASENA).password("null"))
                 .andExpect(unauthenticated())
                 .andExpect(redirectedUrl("/login?error"));
     }
@@ -103,7 +123,7 @@ class SesionTest {
 
     @Test
     void cerrarSesionTerminaLaSesionYVuelveAlLogin() throws Exception {
-        MockHttpSession sesion = (MockHttpSession) mvc.perform(formLogin().user(ESTUDIANTE).password(clave))
+        MockHttpSession sesion = (MockHttpSession) mvc.perform(formLogin().user(ESTUDIANTE).password(CLAVE_ESTUDIANTE))
                 .andReturn().getRequest().getSession();
         mvc.perform(get("/").session(sesion)).andExpect(status().isOk());
 

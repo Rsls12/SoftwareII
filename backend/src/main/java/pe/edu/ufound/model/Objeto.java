@@ -1,5 +1,6 @@
 package pe.edu.ufound.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,13 +11,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "objeto")
@@ -70,6 +78,17 @@ public class Objeto {
     @JoinColumn(name = "id_usuario_reporta", nullable = false, updatable = false)
     private Usuario reportadoPor;
 
+    // HU-15: cambios de estado del objeto, en el orden en que ocurrieron.
+    @OneToMany(mappedBy = "objeto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
+    @OrderBy("fechaHora ASC, idHistorial ASC")
+    private List<HistorialEstado> historial = new ArrayList<>();
+
+    // HU-22: la entrega del objeto a su dueño; como mucho una, y cierra el caso.
+    @OneToMany(mappedBy = "objeto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
+    private List<Entrega> entregas = new ArrayList<>();
+
     protected Objeto() {
     }
 
@@ -83,6 +102,15 @@ public class Objeto {
         this.imagenUrl = validarImagenUrl(imagenUrl);
         this.fechaHoraReporte = requerido(fechaHoraReporte, "fechaHoraReporte");
         this.reportadoPor = requerido(reportadoPor, "reportadoPor");
+    }
+
+    // HU-04, HU-10: el estudiante reporta PERDIDO y seguridad registra ENCONTRADO.
+    public static Objeto reportar(String nombre, String descripcion, CategoriaObjeto categoria,
+                                  Pabellon ubicacion, String imagenUrl, Usuario autor) {
+        if (autor != null && autor.esSeguridad()) {
+            return reportarEncontrado(nombre, descripcion, categoria, ubicacion, imagenUrl, autor);
+        }
+        return reportarPerdido(nombre, descripcion, categoria, ubicacion, imagenUrl, autor);
     }
 
     public static Objeto reportarPerdido(String nombre, String descripcion, CategoriaObjeto categoria,
@@ -109,6 +137,38 @@ public class Objeto {
 
     public void cambiarEstado(EstadoObjeto nuevoEstado) {
         this.estado = requerido(nuevoEstado, "estado");
+    }
+
+    // HU-14, HU-15: cambia el estado y deja el cambio en el historial del objeto.
+    public void cambiarEstado(EstadoObjeto nuevoEstado, String observacion, Usuario realizadoPor) {
+        if (fueEntregado()) {
+            throw new OperacionNoPermitidaException();
+        }
+        // Para pasar a ENTREGADO hacen falta los datos de quien reclama: se usa entregar().
+        if (nuevoEstado == EstadoObjeto.ENTREGADO) {
+            throw new DatosInvalidosException("entrega");
+        }
+        registrarCambio(nuevoEstado, observacion, realizadoPor);
+    }
+
+    // HU-14, HU-22: entrega el objeto a su dueño; queda ENTREGADO y con su registro de entrega.
+    public Entrega entregar(String nombreReclamante, String documentoReclamante, String observacion,
+                            Usuario encargado) {
+        if (fueEntregado()) {
+            throw new OperacionNoPermitidaException();
+        }
+        Entrega entrega = new Entrega(this, nombreReclamante, documentoReclamante, LocalDateTime.now(),
+                observacion, encargado);
+        registrarCambio(EstadoObjeto.ENTREGADO, observacion, encargado);
+        entregas.add(entrega);
+        return entrega;
+    }
+
+    private void registrarCambio(EstadoObjeto nuevoEstado, String observacion, Usuario realizadoPor) {
+        HistorialEstado cambio = new HistorialEstado(this, estado, requerido(nuevoEstado, "estado"),
+                LocalDateTime.now(), observacion, realizadoPor);
+        cambiarEstado(nuevoEstado);
+        historial.add(cambio);
     }
 
     public void marcarEnRevision() {
@@ -155,6 +215,19 @@ public class Objeto {
         return activo && esDe(usuario) && estado == EstadoObjeto.REPORTADO;
     }
 
+    // HU-16, HU-17: un filtro vacío (null) no descarta al objeto.
+    public boolean coincideCon(String texto, TipoObjeto tipo, CategoriaObjeto categoria,
+                               Pabellon ubicacion, EstadoObjeto estado) {
+        String buscado = texto == null ? "" : texto.trim().toLowerCase();
+        return (buscado.isEmpty()
+                        || nombre.toLowerCase().contains(buscado)
+                        || descripcion.toLowerCase().contains(buscado))
+                && (tipo == null || this.tipo == tipo)
+                && (categoria == null || this.categoria == categoria)
+                && (ubicacion == null || this.ubicacion == ubicacion)
+                && (estado == null || this.estado == estado);
+    }
+
     public boolean tieneImagen() {
         return imagenUrl != null;
     }
@@ -162,6 +235,7 @@ public class Objeto {
     public boolean esPerdido() { return tipo == TipoObjeto.PERDIDO; }
     public boolean esEncontrado() { return tipo == TipoObjeto.ENCONTRADO; }
     public boolean estaArchivado() { return estado == EstadoObjeto.ARCHIVADO; }
+    public boolean fueEntregado() { return !entregas.isEmpty(); }
 
     public Long getIdObjeto() { return idObjeto; }
     public String getNombre() { return nombre; }
@@ -174,6 +248,15 @@ public class Objeto {
     public EstadoObjeto getEstado() { return estado; }
     public boolean isActivo() { return activo; }
     public Usuario getReportadoPor() { return reportadoPor; }
+
+    public Entrega getEntrega() { return entregas.isEmpty() ? null : entregas.get(0); }
+
+    // HU-15: el historial se muestra del cambio más reciente al más antiguo.
+    public List<HistorialEstado> getHistorial() {
+        List<HistorialEstado> recientesPrimero = new ArrayList<>(historial);
+        Collections.reverse(recientesPrimero);
+        return Collections.unmodifiableList(recientesPrimero);
+    }
 
     private static String validarNombre(String valor) {
         String limpio = texto(valor, "nombre");

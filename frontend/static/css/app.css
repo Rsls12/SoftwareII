@@ -262,6 +262,15 @@ input, select, textarea {
 }
 
 textarea { min-height: 8rem; resize: vertical; }
+input[readonly] { color: var(--c-text-muted); background: var(--c-bg); }
+
+/* Campos que van juntos dentro de un formulario (HU-22: datos de la entrega). */
+.grupo-campos {
+  display: grid; gap: var(--sp-4); margin: 0; padding: var(--sp-4);
+  border: 1px solid var(--c-border); border-radius: var(--radius-control);
+}
+.grupo-campos[hidden] { display: none; }
+.grupo-campos legend { padding: 0 var(--sp-2); font-size: var(--fs-sm); font-weight: 700; }
 input:disabled, select:disabled { color: var(--c-text-muted); background: var(--c-bg); }
 input:user-invalid, select:user-invalid, textarea:user-invalid { border-color: var(--c-error); }
 

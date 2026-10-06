@@ -11,15 +11,9 @@ cd backend
 
 Es una sola aplicación: `backend/` la compila y la levanta, y al hacerlo empaqueta las vistas y los estilos de `frontend/`.
 
-Abrir http://localhost:8080/login e iniciar sesión con uno de los usuarios de ejemplo. Cada uno ve un inicio distinto:
+Abrir http://localhost:8080/login e iniciar sesión con el correo y la contraseña de un usuario de la tabla `usuario` de Supabase. Cada rol (Estudiante, Seguridad, Oficina) ve un inicio distinto.
 
-| Rol | Correo |
-|---|---|
-| Estudiante | `ana.torres@universidad.edu.pe` |
-| Seguridad | `jorge.quispe@universidad.edu.pe` |
-| Oficina | `lucia.paredes@universidad.edu.pe` |
-
-Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mientras no haya base de datos.
+El código no trae usuarios ni objetos de ejemplo: todo sale de la base de datos. Cada usuario tiene su propia contraseña, guardada como hash BCrypt en `usuario.contrasena`. Los usuarios se dan de alta en Supabase, generando el hash con `extensions.crypt('clave', extensions.gen_salt('bf', 10))`.
 
 ## Estructura
 
@@ -27,11 +21,11 @@ Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mien
 
 | Carpeta | Qué hay |
 |---|---|
-| `model/` | Clases y enums del diagrama UML (Objeto, Usuario, EstadoObjeto...) |
-| `servicio/` | **MOCK**: datos en memoria. El backend cambia las listas por repositorios JPA |
-| `seguridad/` | Spring Security: login, logout y rutas por rol (`SeguridadConfig`), y el puente con los usuarios (`UsuarioDetailsService`) |
-| `controlador/PantallaController` | Abre cada pantalla. No tiene reglas de negocio |
-| `controlador/SesionController` | Muestra el login. El POST `/login` y el POST `/logout` los procesa Spring Security |
+| `model/` | Los objetos del sistema y sus reglas: `Usuario`, `Objeto`, `HistorialEstado`, `Entrega` y los enums. Aquí está toda la lógica de negocio |
+| `repositorio/` | Interfaces Spring Data JPA que guardan y buscan los objetos en Supabase (PostgreSQL) |
+| `almacenamiento/` | `AlmacenamientoImagenes` (interfaz) y `AlmacenamientoSupabase`, que sube las fotos a Supabase Storage |
+| `seguridad/SeguridadConfig` | Spring Security: login con el hash BCrypt de cada usuario, logout y rutas por rol |
+| `web/RutasWeb` | Entrada HTTP: une cada ruta con el objeto que la atiende y con su vista. No tiene reglas de negocio |
 | `src/main/resources/application.properties` | Configuración de la aplicación |
 | `src/test/` | Pruebas |
 | `pom.xml` | Dependencias. También indica que las vistas y estilos se toman de `../frontend` |
@@ -46,20 +40,22 @@ Los tres usan la clave de `ufound.mock.clave` (en `application.properties`) mien
 
 ## Para el equipo de backend
 
-Todo lo que dice `MOCK` en el código es temporal:
+Pendiente: permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte); hoy la vista solo oculta botones.
 
-1. `ObjetoService` y `UsuarioService`: mantener los métodos públicos, cambiar las listas por JPA.
-2. Contraseñas: hoy los usuarios de ejemplo comparten `ufound.mock.clave`. Con la BD, `UsuarioDetailsService` lee el hash BCrypt de cada usuario.
-3. Fotos: hoy se guardan como data URL en memoria (`aImagenUrl` del controlador).
-4. Permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte): hoy la vista solo oculta botones.
+Sin services ni controllers: la lógica vive en los objetos de `model/`.
+
+- No hay clases `@Service` de negocio ni `@Controller`. Lo que hacía `ObjetoService` ahora lo hace `Objeto` (`reportar`, `cambiarEstado`, `coincideCon`, `editar`, `desactivar`) y las consultas están en `ObjetoRepository` (`buscar`, `recientes`).
+- `Objeto.cambiarEstado(estado, observacion, usuario)` crea su `HistorialEstado`; el historial es parte del objeto y se guarda con él.
+- `HistorialEstado` y `Entrega` ya son entidades JPA (tablas `historial_estado` y `entrega`).
+- `Objeto.entregar(nombre, documento, observacion, encargado)` crea su `Entrega` y cierra el caso: un objeto entregado ya no cambia de estado.
+- Las pruebas usan H2 en memoria, un Supabase Storage falso y sus propios datos (`src/test/java/pe/edu/ufound/DatosDePrueba`): no tocan Supabase.
 
 Sprint 1, HU-04, HU-05 y HU-09 (Rodrigo Arcos):
 
-- `Objeto` y `Usuario` ya son entidades JPA (tablas `objeto` y `usuario`). Base H2 embebida mientras no haya servidor de BD.
+- `Objeto` y `Usuario` son entidades JPA (tablas `objeto` y `usuario`) en Supabase (PostgreSQL).
 - `categoria`, `ubicacion`, `tipo` y `estado` se guardan como varchar, sin tabla propia (nota del diagrama). `GET /api/categorias` las lista.
 - `POST /objetos` guarda el objeto en BD; el estudiante registra PERDIDO y seguridad ENCONTRADO.
-- Fotos: `AlmacenamientoImagenes` (interfaz) con `AlmacenamientoLocal` en `backend/uploads/imagenes`, servidas en `/imagenes/**`. Se valida el tipo real del archivo (JPG, PNG, GIF, WEBP).
-- `HistorialEstado` y `Entrega` siguen en memoria (HU de otros integrantes).
+- Fotos: `AlmacenamientoImagenes` (interfaz) con `AlmacenamientoSupabase`, que las sube al bucket de Supabase Storage. Se valida el tipo real del archivo (JPG, PNG, GIF, WEBP).
 
 Ya está hecho (Sprint 1, HU-01 a HU-03): login y logout con Spring Security, sesión por usuario y rutas por rol
 (`/entregas` y cambiar estado solo Oficina; registrar objeto solo Estudiante y Seguridad). Los formularios con
