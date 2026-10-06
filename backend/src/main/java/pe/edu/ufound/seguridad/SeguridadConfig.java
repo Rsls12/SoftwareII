@@ -32,6 +32,7 @@ public class SeguridadConfig {
                         .requestMatchers("/login", "/css/**").permitAll()
                         // Las mismas reglas con las que la vista muestra u oculta cada opción.
                         .requestMatchers("/entregas").hasRole(oficina)
+                        .requestMatchers("/mis-publicaciones").hasRole(estudiante)
                         .requestMatchers(HttpMethod.POST, "/objetos/*/estado").hasRole(oficina)
                         .requestMatchers("/objetos/nuevo").hasAnyRole(estudiante, seguridad)
                         .requestMatchers(HttpMethod.POST, "/objetos").hasAnyRole(estudiante, seguridad)

@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PantallasTest {
 
     private static final String ESTUDIANTE = "ana.torres@universidad.edu.pe";
+    private static final String SEGURIDAD = "jorge.quispe@universidad.edu.pe";
     private static final String OFICINA = "lucia.paredes@universidad.edu.pe";
 
     @Autowired
@@ -137,6 +138,27 @@ class PantallasTest {
         mvc.perform(get("/mis-publicaciones").flashAttr("mensaje", "Reporte eliminado."))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Reporte eliminado.")));
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void misPublicacionesMuestraSoloLosReportesActivosDelEstudiante() throws Exception {
+        Objeto retirado = reporteDeAna("Polo blanco", "Polo blanco talla S con logo");
+        retirado.desactivar();
+        objetos.save(retirado);
+
+        mvc.perform(get("/mis-publicaciones"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Laptop Lenovo ThinkPad gris")))
+                .andExpect(content().string(containsString("En revisión")))
+                .andExpect(content().string(not(containsString("Polo blanco"))))
+                .andExpect(content().string(not(containsString("Llaves con llavero de Pikachu"))));
+    }
+
+    @Test
+    @WithUserDetails(SEGURIDAD)
+    void misPublicacionesEsSoloParaEstudiantes() throws Exception {
+        mvc.perform(get("/mis-publicaciones")).andExpect(status().isForbidden());
     }
 
     @Test
