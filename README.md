@@ -40,7 +40,7 @@ El código no trae usuarios ni objetos de ejemplo: todo sale de la base de datos
 
 ## Para el equipo de backend
 
-Pendiente: solo el dueño edita su reporte (HU-21); hoy la vista solo oculta el botón. Eliminar ya lo valida `Objeto.eliminar` (HU-20).
+Pendiente: permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte); hoy la vista solo oculta botones.
 
 Sin services ni controllers: la lógica vive en los objetos de `model/`.
 
