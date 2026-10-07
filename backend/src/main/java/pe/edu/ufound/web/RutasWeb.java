@@ -14,6 +14,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.util.WebUtils;
 import pe.edu.ufound.almacenamiento.AlmacenamientoImagenes;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
+import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.EstadoObjeto;
 import pe.edu.ufound.model.Objeto;
@@ -153,7 +154,12 @@ public class RutasWeb {
 
     private ServerResponse eliminar(ServerRequest peticion) {
         Objeto objeto = objetoDe(peticion);
-        objeto.eliminar(yo(peticion));
+        Usuario yo = yo(peticion);
+        // HU-20: solo el estudiante dueño
+        if (!yo.esEstudiante() || !objeto.esDe(yo)) {
+            throw new OperacionNoPermitidaException();
+        }
+        objeto.desactivar();
         objetos.save(objeto);
         return redirigir(peticion, "/mis-publicaciones", "Reporte eliminado.");
     }

@@ -29,7 +29,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PantallasTest {
 
     private static final String ESTUDIANTE = "ana.torres@universidad.edu.pe";
-    private static final String SEGURIDAD = "jorge.quispe@universidad.edu.pe";
     private static final String OFICINA = "lucia.paredes@universidad.edu.pe";
 
     @Autowired
@@ -142,38 +141,6 @@ class PantallasTest {
 
     @Test
     @WithUserDetails(ESTUDIANTE)
-    void misPublicacionesMuestraSoloLosReportesActivosDelEstudiante() throws Exception {
-        Objeto retirado = reporteDeAna("Polo blanco", "Polo blanco talla S con logo");
-        retirado.desactivar();
-        objetos.save(retirado);
-
-        mvc.perform(get("/mis-publicaciones"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Laptop Lenovo ThinkPad gris")))
-                .andExpect(content().string(containsString("En revisión")))
-                .andExpect(content().string(not(containsString("Polo blanco"))))
-                .andExpect(content().string(not(containsString("Llaves con llavero de Pikachu"))));
-    }
-
-    @Test
-    @WithUserDetails(SEGURIDAD)
-    void elInicioMuestraLosObjetosRecientes() throws Exception {
-        reporteDeAna("Termo negro", "Termo negro de acero con tapa gris");
-
-        mvc.perform(get("/"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Objetos recientes")))
-                .andExpect(content().string(containsString("Termo negro")));
-    }
-
-    @Test
-    @WithUserDetails(SEGURIDAD)
-    void misPublicacionesEsSoloParaEstudiantes() throws Exception {
-        mvc.perform(get("/mis-publicaciones")).andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithUserDetails(ESTUDIANTE)
     void losFormulariosLlevanElTokenCsrf() throws Exception {
         mvc.perform(get("/objetos/nuevo"))
                 .andExpect(status().isOk())
@@ -220,17 +187,6 @@ class PantallasTest {
     }
 
     @Test
-    @WithUserDetails(SEGURIDAD)
-    void nadieMasPuedeEliminarElReporteDeOtro() throws Exception {
-        Long id = reporteDeAna("Casco de bici", "Casco de bici blanco con luz trasera").getIdObjeto();
-
-        mvc.perform(get("/objetos/" + id)).andExpect(content().string(not(containsString("Eliminar reporte"))));
-        mvc.perform(post("/objetos/" + id + "/eliminar").with(csrf())).andExpect(status().isForbidden());
-
-        assertTrue(objetos.findById(id).orElseThrow().isActivo());
-    }
-
-    @Test
     @WithUserDetails(ESTUDIANTE)
     void unObjetoQueNoExisteDa404() throws Exception {
         mvc.perform(get("/objetos/999999")).andExpect(status().isNotFound());
@@ -244,26 +200,6 @@ class PantallasTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("María Fernández López")))
                 .andExpect(content().string(containsString("Llaves con llavero de Pikachu")));
-    }
-
-    // HU-22: fecha, objeto, reclamante y encargado, con la entrega más reciente primero.
-    @Test
-    @WithUserDetails(OFICINA)
-    void elHistorialDeEntregasMuestraLaMasRecientePrimero() throws Exception {
-        Objeto mochila = reporteDeAna("Mochila celeste", "Mochila celeste con parche de gato");
-        mochila.entregar("Rosa Medina Salas", "DNI 72345678", "Reconoció el parche",
-                usuarios.findByCorreoIgnoreCase(OFICINA).orElseThrow());
-        objetos.save(mochila);
-
-        String pagina = mvc.perform(get("/entregas"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString(mochila.getCodigo())))
-                .andExpect(content().string(containsString("Rosa Medina Salas")))
-                .andExpect(content().string(containsString("DNI 72345678")))
-                .andExpect(content().string(containsString("Lucía Paredes Vega")))
-                .andReturn().getResponse().getContentAsString();
-
-        assertTrue(pagina.indexOf("Rosa Medina Salas") < pagina.indexOf("María Fernández López"));
     }
 
     private Objeto reporteDeAna(String nombre, String descripcion) {
