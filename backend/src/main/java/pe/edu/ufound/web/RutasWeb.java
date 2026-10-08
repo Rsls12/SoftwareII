@@ -136,19 +136,32 @@ public class RutasWeb {
     }
 
     // ---------- Editar y eliminar reporte propio (HU-20, HU-21) ----------
-    // Los permisos (solo el dueño) siguen pendientes; aquí la vista solo oculta los botones.
 
     private ServerResponse editar(ServerRequest peticion) {
-        Map<String, Object> modelo = modelo(peticion, yo(peticion));
-        modelo.put("objeto", objetoDe(peticion));
+        Usuario yo = yo(peticion);
+        Objeto objeto = objetoDe(peticion);
+        if (!objeto.puedeEditarlo(yo)) {
+            throw new OperacionNoPermitidaException();
+        }
+        Map<String, Object> modelo = modelo(peticion, yo);
+        modelo.put("objeto", objeto);
         return ServerResponse.ok().render("formulario", modelo);
     }
 
     private ServerResponse guardarEdicion(ServerRequest peticion) {
+        Usuario yo = yo(peticion);
         Objeto objeto = objetoDe(peticion);
-        objeto.editar(texto(peticion, "descripcion"), opcion(peticion, "ubicacion", Pabellon.class),
-                imagenes.guardar(foto(peticion)));
-        objetos.save(objeto);
+        if (!objeto.puedeEditarlo(yo)) {
+            throw new OperacionNoPermitidaException();
+        }
+        String imagenUrl = imagenes.guardar(foto(peticion));
+        try {
+            objeto.editar(texto(peticion, "descripcion"), opcion(peticion, "ubicacion", Pabellon.class), imagenUrl);
+            objetos.save(objeto);
+        } catch (RuntimeException e) {
+            imagenes.eliminar(imagenUrl);
+            throw e;
+        }
         return redirigir(peticion, "/objetos/" + objeto.getIdObjeto(), "Cambios guardados.");
     }
 
