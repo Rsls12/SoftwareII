@@ -83,7 +83,7 @@ class ObjetoTest {
     @Test
     void datosIncompletosNoSeRegistran() {
         Usuario ana = conRol(RolUsuario.ESTUDIANTE);
-
+ 
         assertEquals("categoria", assertThrows(DatosInvalidosException.class, () -> Objeto.reportarPerdido(
                 "Mochila", "Mochila negra con llavero", null, Pabellon.PABELLON_A, null, ana)).getCampo());
         assertEquals("nombre", assertThrows(DatosInvalidosException.class, () -> Objeto.reportarPerdido(
@@ -215,6 +215,24 @@ class ObjetoTest {
         objetos.save(eliminado);
 
         assertEquals(antes.size() - 1, objetos.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(ana).size());
+    }
+
+    @Test
+    void objetoPerdidoMantieneHistorialYLineaDeTiempo() {
+        Usuario ana = conRol(RolUsuario.ESTUDIANTE);
+        Usuario oficina = conRol(RolUsuario.OFICINA_OBJETOS_PERDIDOS);
+        Objeto objeto = objetos.save(Objeto.reportarPerdido("Audífonos Sony", "Audífonos inalámbricos negros",
+                CategoriaObjeto.TECNOLOGIA, Pabellon.PABELLON_C, null, ana));
+
+        assertFalse(objeto.tieneHistorial());
+        assertNull(objeto.getUltimoCambio());
+        assertEquals(objeto.getFechaHoraReporte(), objeto.getFechaUltimaActualizacion());
+
+        objeto.cambiarEstado(EstadoObjeto.EN_REVISION, "Revisando en almacén", oficina);
+        assertTrue(objeto.tieneHistorial());
+        assertNotNull(objeto.getUltimoCambio());
+        assertEquals("Pasó de Reportado a En revisión", objeto.getUltimoCambio().getDescripcionCambio());
+        assertTrue(objeto.getUltimoCambio().tieneObservacion());
     }
 
     private Usuario conRol(RolUsuario rol) {

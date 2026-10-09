@@ -78,4 +78,12 @@ public class HistorialEstado {
     public LocalDateTime getFechaHora() { return fechaHora; }
     public String getObservacion() { return observacion; }
     public Usuario getRealizadoPor() { return realizadoPor; }
+
+    public String getDescripcionCambio() {
+        return "Pasó de " + estadoAnterior.getEtiqueta() + " a " + estadoNuevo.getEtiqueta();
+    }
+
+    public boolean tieneObservacion() {
+        return observacion != null && !observacion.isBlank();
+    }
 }
