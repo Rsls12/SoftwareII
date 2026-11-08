@@ -128,25 +128,37 @@
             </script>
         </section>
 
-        <section class="seccion" aria-labelledby="titulo-historial">
-            <h2 id="titulo-historial">Historial de estados</h2>
-            <ol class="linea-tiempo" th:unless="${historial.isEmpty()}">
-                <li th:each="h : ${historial}">
-                    <p>
-                        <span th:replace="~{fragmentos :: estado(${h.estadoAnterior})}"></span>
-                        →
-                        <span th:replace="~{fragmentos :: estado(${h.estadoNuevo})}"></span>
-                    </p>
-                    <p th:if="${h.observacion}" th:text="${h.observacion}">Observación</p>
-                    <p class="campo__ayuda"
-                       th:text="|${#temporals.format(h.fechaHora, 'dd/MM/yyyy HH:mm')} · ${h.realizadoPor.nombreCompleto}|">
-                        01/10/2026 · Lucía Paredes
-                    </p>
-                </li>
-            </ol>
-            <p class="texto-secundario" th:if="${historial.isEmpty()}">Este objeto aún no tiene cambios de estado.</p>
-        </section>
     </th:block>
+
+    <!-- ===== Historial de estados (Línea de tiempo para seguimiento del objeto) ===== -->
+    <section class="seccion" aria-labelledby="titulo-historial">
+        <h2 id="titulo-historial">Historial de estados</h2>
+        <ol class="linea-tiempo">
+            <li th:each="cambio : ${historial}">
+                <p>
+                    <span th:replace="~{fragmentos :: estado(${cambio.estadoAnterior})}"></span>
+                    <span aria-hidden="true">→</span>
+                    <span th:replace="~{fragmentos :: estado(${cambio.estadoNuevo})}"></span>
+                </p>
+                <p th:if="${cambio.observacion}" th:text="${cambio.observacion}">Observación</p>
+                <p class="campo__ayuda"
+                   th:text="|${#temporals.format(cambio.fechaHora, 'dd/MM/yyyy HH:mm')} · ${cambio.realizadoPor.nombreCompleto}|">
+                    01/10/2026 · Lucía Paredes
+                </p>
+            </li>
+            <li>
+                <p>
+                    <span class="estado estado--reportado">Reportado</span>
+                    <span class="texto-secundario">· Reporte inicial</span>
+                </p>
+                <p class="campo__ayuda"
+                   th:text="|${#temporals.format(objeto.fechaHoraReporte, 'dd/MM/yyyy HH:mm')} · ${objeto.reportadoPor.nombreCompleto}|">
+                    01/10/2026 · Ana Torres
+                </p>
+            </li>
+        </ol>
+        <p class="texto-secundario" th:if="${historial.isEmpty()}">Este objeto aún no tiene cambios de estado.</p>
+    </section>
 </main>
 </body>
 </html>

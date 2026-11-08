@@ -258,6 +258,18 @@ public class Objeto {
         return Collections.unmodifiableList(recientesPrimero);
     }
 
+    public boolean tieneHistorial() {
+        return !historial.isEmpty();
+    }
+
+    public HistorialEstado getUltimoCambio() {
+        return historial.isEmpty() ? null : historial.get(historial.size() - 1);
+    }
+
+    public LocalDateTime getFechaUltimaActualizacion() {
+        return historial.isEmpty() ? fechaHoraReporte : historial.get(historial.size() - 1).getFechaHora();
+    }
+
     private static String validarNombre(String valor) {
         String limpio = texto(valor, "nombre");
         if (limpio.length() > NOMBRE_MAXIMO) {

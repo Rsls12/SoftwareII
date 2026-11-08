@@ -11,6 +11,7 @@ import pe.edu.ufound.model.EstadoObjeto;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.RolUsuario;
+import pe.edu.ufound.model.Usuario;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
@@ -60,6 +61,23 @@ class PantallasTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Paraguas negro")))
                 .andExpect(content().string(containsString("Buscando entre lo encontrado hoy")))
+                .andExpect(content().string(containsString("Lucía Paredes Vega")));
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void estudianteVeElHistorialDeEstadoEnElDetalle() throws Exception {
+        Long id = reporteDeAna("Casaca impermeable", "Casaca azul impermeable talla M").getIdObjeto();
+        Objeto obj = objetos.findById(id).orElseThrow();
+        Usuario oficina = usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.OFICINA_OBJETOS_PERDIDOS).orElseThrow();
+        obj.cambiarEstado(EstadoObjeto.EN_REVISION, "Verificando coincidencias en recepción", oficina);
+        objetos.save(obj);
+
+        mvc.perform(get("/objetos/" + id))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Casaca impermeable")))
+                .andExpect(content().string(containsString("Historial de estados")))
+                .andExpect(content().string(containsString("Verificando coincidencias en recepción")))
                 .andExpect(content().string(containsString("Lucía Paredes Vega")));
     }
 
