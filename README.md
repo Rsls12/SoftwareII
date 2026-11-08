@@ -4,6 +4,8 @@ Sistema de objetos perdidos y encontrados del campus. Spring Boot 4 + Thymeleaf,
 
 ## Cómo correrlo
 
+Se necesita el archivo `backend/.env` con las credenciales de Supabase (ver `backend/.env.example`).
+
 ```
 cd backend
 ./mvnw spring-boot:run        (Windows: mvnw.cmd spring-boot:run)
