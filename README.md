@@ -17,6 +17,10 @@ Abrir http://localhost:8080/login e iniciar sesión con el correo y la contrase�
 
 El código no trae usuarios ni objetos de ejemplo: todo sale de la base de datos. Cada usuario tiene su propia contraseña, guardada como hash BCrypt en `usuario.contrasena`. Los usuarios se dan de alta en Supabase, generando el hash con `extensions.crypt('clave', extensions.gen_salt('bf', 10))`.
 
+## Publicarlo en internet
+
+Se despliega en Render con Docker (`Dockerfile` + `render.yaml`). Pasos en [DESPLIEGUE.md](DESPLIEGUE.md).
+
 ## Estructura
 
 **`backend/`**: proyecto Spring Boot (Java). Los paquetes están en `backend/src/main/java/pe/edu/ufound/`.

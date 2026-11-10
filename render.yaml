@@ -1,0 +1,26 @@
+# Blueprint de Render: New > Blueprint > elegir este repo.
+# Los valores con sync: false se piden en el panel de Render al crear el servicio (no van en git).
+services:
+  - type: web
+    name: ufound
+    runtime: docker
+    plan: free
+    region: oregon
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: objetos

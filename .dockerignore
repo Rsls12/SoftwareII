@@ -1,0 +1,11 @@
+# Nunca meter secretos ni compilados locales en la imagen
+**/.env
+**/.env.*
+!**/.env.example
+**/target/
+.git/
+.vscode/
+.idea/
+.claude/
+uploads/
+frontend/docs/
