@@ -6,19 +6,26 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.edu.ufound.DatosDePrueba;
 import pe.edu.ufound.model.CategoriaObjeto;
+import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.EstadoObjeto;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.RolUsuario;
 import pe.edu.ufound.model.Usuario;
+import pe.edu.ufound.repositorio.CoincidenciaRepository;
+import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
+
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -40,6 +47,12 @@ class PantallasTest {
 
     @Autowired
     private UsuarioRepository usuarios;
+
+    @Autowired
+    private CoincidenciaRepository coincidencias;
+
+    @Autowired
+    private NotificacionRepository notificaciones;
 
     @Test
     @WithUserDetails(OFICINA)
@@ -235,6 +248,39 @@ class PantallasTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("María Fernández López")))
                 .andExpect(content().string(containsString("Llaves con llavero de Pikachu")));
+    }
+
+    // ---------- HU-26: ver notificaciones ----------
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void estudianteVeSusNotificacionesConEnlacesALosObjetos() throws Exception {
+        Objeto perdida = reporteDeAna("Guitarra acústica Yamaha", "Guitarra Yamaha con funda negra y correa roja");
+        Usuario jorge = usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.SEGURIDAD).orElseThrow();
+        Objeto encontrada = objetos.save(Objeto.reportar("Guitarra Yamaha", "Guitarra acústica Yamaha con funda negra",
+                CategoriaObjeto.OTROS, Pabellon.PABELLON_A, null, jorge));
+        notificaciones.saveAll(Notificacion.de(
+                coincidencias.saveAll(encontrada.detectarCoincidencias(List.of(perdida)))));
+
+        mvc.perform(get("/notificaciones"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("podría ser tu &quot;Guitarra acústica Yamaha&quot;")))
+                .andExpect(content().string(containsString("Nueva")))
+                .andExpect(content().string(containsString("/objetos/" + encontrada.getIdObjeto())))
+                .andExpect(content().string(containsString("/objetos/" + perdida.getIdObjeto())));
+    }
+
+    @Test
+    void estudianteSinNotificacionesVeElMensajeVacio() throws Exception {
+        mvc.perform(get("/notificaciones").with(user(DatosDePrueba.SIN_CONTRASENA).roles("ESTUDIANTE")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("No tienes notificaciones por ahora.")));
+    }
+
+    @Test
+    @WithUserDetails(OFICINA)
+    void soloElEstudianteEntraANotificaciones() throws Exception {
+        mvc.perform(get("/notificaciones")).andExpect(status().isForbidden());
     }
 
     private Objeto reporteDeAna(String nombre, String descripcion) {

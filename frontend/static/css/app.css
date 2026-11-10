@@ -513,6 +513,16 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
   .ranking__fila { grid-template-columns: 10rem 1fr 6rem; grid-template-areas: "nombre barra dato" ". detalle detalle"; }
 }
 
+/* ---------- Notificaciones (HU-26) ---------- */
+.notificaciones { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+.notificacion { display: grid; gap: var(--sp-2); }
+.notificacion--nueva { border-left: 4px solid var(--st-coincidencia-fg); }
+.notificacion__cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.notificacion__fecha { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-muted); }
+.notificacion__mensaje { margin: 0; overflow-wrap: anywhere; }
+.notificacion__acciones { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); font-size: var(--fs-sm); }
+.notificacion__acciones a { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--c-accent); }
+
 /* ---------- Login ---------- */
 .login { display: grid; place-items: center; min-height: 100dvh; padding: var(--sp-4); }
 .login__caja { display: grid; gap: var(--sp-6); width: 100%; max-width: 24rem; }

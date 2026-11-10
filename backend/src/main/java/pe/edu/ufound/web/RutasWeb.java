@@ -73,6 +73,7 @@ public class RutasWeb {
                 .DELETE("/objetos/{id}", this::eliminar)
                 .GET("/buscar", this::buscar)
                 .GET("/mis-publicaciones", this::misPublicaciones)
+                .GET("/notificaciones", this::notificaciones)
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
                 .GET("/api/categorias", this::categorias)
@@ -235,6 +236,15 @@ public class RutasWeb {
         Map<String, Object> modelo = modelo(peticion, yo);
         modelo.put("misReportes", objetos.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(yo));
         return ServerResponse.ok().render("mis-publicaciones", modelo);
+    }
+
+    // ---------- Notificaciones del estudiante (HU-26) ----------
+
+    private ServerResponse notificaciones(ServerRequest peticion) {
+        Usuario yo = yo(peticion);
+        Map<String, Object> modelo = modelo(peticion, yo);
+        modelo.put("notificaciones", notificaciones.findByDestinatarioOrderByFechaHoraDescIdNotificacionDesc(yo));
+        return ServerResponse.ok().render("notificaciones", modelo);
     }
 
     private ServerResponse historialDeEntregas(ServerRequest peticion) {

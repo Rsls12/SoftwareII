@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!-- HU-26: notificaciones del estudiante, de la más reciente a la más antigua. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Notificaciones')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('notificaciones')}"></header>
+
+<main class="contenido">
+    <p th:replace="~{fragmentos :: aviso}"></p>
+
+    <div class="pagina-titulo">
+        <h1>Notificaciones</h1>
+        <p class="texto-secundario">Te avisamos cuando se registra un objeto que podría ser el que perdiste.</p>
+    </div>
+
+    <ul class="notificaciones" th:unless="${notificaciones.isEmpty()}">
+        <li class="notificacion panel" th:each="n : ${notificaciones}" th:classappend="${n.leida} ? '' : 'notificacion--nueva'">
+            <div class="notificacion__cabecera">
+                <span class="estado estado--coincidencia" th:unless="${n.leida}">Nueva</span>
+                <time class="notificacion__fecha" th:datetime="${n.fechaHora}"
+                      th:text="${#temporals.format(n.fechaHora, 'dd/MM/yyyy HH:mm')}">10/11/2026 15:00</time>
+            </div>
+            <p class="notificacion__mensaje" th:text="${n.mensaje}">Se registró un objeto encontrado que podría ser tu objeto.</p>
+            <div class="notificacion__acciones">
+                <a th:href="@{/objetos/{id}(id=${n.coincidencia.objetoEncontrado.idObjeto})}">Ver objeto encontrado</a>
+                <a th:href="@{/objetos/{id}(id=${n.coincidencia.objetoPerdido.idObjeto})}">Ver mi reporte</a>
+            </div>
+        </li>
+    </ul>
+
+    <div class="vacio panel" th:if="${notificaciones.isEmpty()}">
+        <p>No tienes notificaciones por ahora.</p>
+        <a class="boton boton--secundario" th:href="@{/mis-publicaciones}">Ver mis reportes</a>
+    </div>
+</main>
+</body>
+</html>
