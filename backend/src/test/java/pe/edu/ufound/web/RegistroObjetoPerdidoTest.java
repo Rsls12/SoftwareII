@@ -13,9 +13,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import pe.edu.ufound.almacenamiento.SupabaseFalso;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Coincidencia;
+import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.TipoObjeto;
 import pe.edu.ufound.repositorio.CoincidenciaRepository;
+import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
@@ -60,6 +62,9 @@ class RegistroObjetoPerdidoTest {
 
     @Autowired
     private CoincidenciaRepository coincidencias;
+
+    @Autowired
+    private NotificacionRepository notificaciones;
 
     @Test
     @WithUserDetails(ESTUDIANTE)
@@ -135,7 +140,7 @@ class RegistroObjetoPerdidoTest {
 
     @Test
     @WithUserDetails(SEGURIDAD)
-    void alRegistrarUnEncontradoSeDetectaSuCoincidenciaConElPerdido() throws Exception {
+    void alRegistrarUnEncontradoSeDetectaSuCoincidenciaYSeAvisaAlDueno() throws Exception {
         MockMultipartFile foto = new MockMultipartFile("foto", "laptop.png", "image/png", PNG);
 
         mvc.perform(multipart("/objetos").file(foto)
@@ -153,6 +158,13 @@ class RegistroObjetoPerdidoTest {
         assertEquals(1, detectadas.size());
         assertEquals("Laptop Lenovo ThinkPad gris", detectadas.get(0).getObjetoPerdido().getNombre());
         assertTrue(detectadas.get(0).getPuntaje() >= Coincidencia.PUNTAJE_MINIMO);
+
+        // HU-25: es relevante, así que Ana (quien perdió la laptop) recibe el aviso.
+        List<Notificacion> avisosDeAna = notificaciones.findByDestinatarioOrderByFechaHoraDescIdNotificacionDesc(
+                usuarios.findByCorreoIgnoreCase(ESTUDIANTE).orElseThrow());
+        assertEquals(1, avisosDeAna.size());
+        assertEquals(detectadas.get(0).getIdCoincidencia(), avisosDeAna.get(0).getCoincidencia().getIdCoincidencia());
+        assertTrue(avisosDeAna.get(0).getMensaje().contains("Laptop Lenovo ThinkPad gris"));
     }
 
     @Test

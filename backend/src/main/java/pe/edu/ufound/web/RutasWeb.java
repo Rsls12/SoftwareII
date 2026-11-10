@@ -16,17 +16,21 @@ import pe.edu.ufound.almacenamiento.AlmacenamientoImagenes;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.model.CategoriaObjeto;
+import pe.edu.ufound.model.Coincidencia;
 import pe.edu.ufound.model.EstadoObjeto;
+import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.TipoObjeto;
 import pe.edu.ufound.model.Usuario;
 import pe.edu.ufound.repositorio.CoincidenciaRepository;
+import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.web.servlet.function.RouterFunctions.route;
@@ -40,13 +44,16 @@ public class RutasWeb {
 
     private final ObjetoRepository objetos;
     private final CoincidenciaRepository coincidencias;
+    private final NotificacionRepository notificaciones;
     private final UsuarioRepository usuarios;
     private final AlmacenamientoImagenes imagenes;
 
-    public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias, UsuarioRepository usuarios,
+    public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias,
+                    NotificacionRepository notificaciones, UsuarioRepository usuarios,
                     AlmacenamientoImagenes imagenes) {
         this.objetos = objetos;
         this.coincidencias = coincidencias;
+        this.notificaciones = notificaciones;
         this.usuarios = usuarios;
         this.imagenes = imagenes;
     }
@@ -113,12 +120,14 @@ public class RutasWeb {
             throw e;
         }
         // HU-23: al registrar se buscan los objetos del tipo contrario que podrían ser el mismo.
-        int detectadas = coincidencias.saveAll(
-                objeto.detectarCoincidencias(objetos.candidatosDeCoincidencia(objeto))).size();
+        List<Coincidencia> detectadas = coincidencias.saveAll(
+                objeto.detectarCoincidencias(objetos.candidatosDeCoincidencia(objeto)));
+        // HU-25: las coincidencias relevantes avisan al estudiante que perdió el objeto.
+        notificaciones.saveAll(Notificacion.de(detectadas));
         String aviso = "Listo, quedó registrado con el código " + objeto.getCodigo() + ".";
-        if (detectadas > 0) {
-            aviso += detectadas == 1 ? " Se detectó 1 posible coincidencia."
-                    : " Se detectaron " + detectadas + " posibles coincidencias.";
+        if (!detectadas.isEmpty()) {
+            aviso += detectadas.size() == 1 ? " Se detectó 1 posible coincidencia."
+                    : " Se detectaron " + detectadas.size() + " posibles coincidencias.";
         }
         return redirigir(peticion, "/objetos/" + objeto.getIdObjeto(), aviso);
     }

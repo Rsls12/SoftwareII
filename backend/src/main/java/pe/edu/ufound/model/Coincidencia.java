@@ -19,6 +19,8 @@ public class Coincidencia {
 
     // Misma categoría y al menos otra pista fuerte (lugar, fecha cercana o palabras en común).
     public static final int PUNTAJE_MINIMO = 60;
+    // HU-25: desde este puntaje se avisa al dueño del objeto perdido.
+    public static final int PUNTAJE_RELEVANTE = 75;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,6 +48,10 @@ public class Coincidencia {
         this.objetoEncontrado = objetoEncontrado;
         this.puntaje = puntaje;
         this.fechaHoraDeteccion = fechaHoraDeteccion;
+    }
+
+    public boolean esRelevante() {
+        return puntaje >= PUNTAJE_RELEVANTE;
     }
 
     public Long getIdCoincidencia() { return idCoincidencia; }
