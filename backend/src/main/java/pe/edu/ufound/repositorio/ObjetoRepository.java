@@ -27,6 +27,14 @@ public interface ObjetoRepository extends JpaRepository<Objeto, Long> {
                 .toList();
     }
 
+    List<Objeto> findByTipoAndCategoriaAndActivoTrue(TipoObjeto tipo, CategoriaObjeto categoria);
+
+    // HU-23: solo pueden ser el mismo objeto los del tipo contrario y de la misma categoría.
+    default List<Objeto> candidatosDeCoincidencia(Objeto objeto) {
+        TipoObjeto contrario = objeto.esPerdido() ? TipoObjeto.ENCONTRADO : TipoObjeto.PERDIDO;
+        return findByTipoAndCategoriaAndActivoTrue(contrario, objeto.getCategoria());
+    }
+
     @Query("select distinct o from Objeto o join o.entregas")
     List<Objeto> findEntregados();
 

@@ -21,6 +21,7 @@ import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.TipoObjeto;
 import pe.edu.ufound.model.Usuario;
+import pe.edu.ufound.repositorio.CoincidenciaRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
@@ -38,11 +39,14 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 public class RutasWeb {
 
     private final ObjetoRepository objetos;
+    private final CoincidenciaRepository coincidencias;
     private final UsuarioRepository usuarios;
     private final AlmacenamientoImagenes imagenes;
 
-    public RutasWeb(ObjetoRepository objetos, UsuarioRepository usuarios, AlmacenamientoImagenes imagenes) {
+    public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias, UsuarioRepository usuarios,
+                    AlmacenamientoImagenes imagenes) {
         this.objetos = objetos;
+        this.coincidencias = coincidencias;
         this.usuarios = usuarios;
         this.imagenes = imagenes;
     }
@@ -105,8 +109,15 @@ public class RutasWeb {
             imagenes.eliminar(imagenUrl);
             throw e;
         }
-        return redirigir(peticion, "/objetos/" + objeto.getIdObjeto(),
-                "Listo, quedó registrado con el código " + objeto.getCodigo() + ".");
+        // HU-23: al registrar se buscan los objetos del tipo contrario que podrían ser el mismo.
+        int detectadas = coincidencias.saveAll(
+                objeto.detectarCoincidencias(objetos.candidatosDeCoincidencia(objeto))).size();
+        String aviso = "Listo, quedó registrado con el código " + objeto.getCodigo() + ".";
+        if (detectadas > 0) {
+            aviso += detectadas == 1 ? " Se detectó 1 posible coincidencia."
+                    : " Se detectaron " + detectadas + " posibles coincidencias.";
+        }
+        return redirigir(peticion, "/objetos/" + objeto.getIdObjeto(), aviso);
     }
 
     // ---------- Detalle, estado e historial (HU-12 a HU-15) ----------

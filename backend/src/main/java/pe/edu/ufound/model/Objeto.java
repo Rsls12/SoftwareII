@@ -21,10 +21,16 @@ import org.hibernate.type.SqlTypes;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 
+import java.text.Normalizer;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "objeto")
@@ -34,6 +40,10 @@ public class Objeto {
     public static final int DESCRIPCION_MINIMA = 10;
     public static final int DESCRIPCION_MAXIMA = 500;
     public static final int IMAGEN_URL_MAXIMA = 255;
+    public static final int DIAS_MAXIMOS_COINCIDENCIA = 30;
+    // Palabras que aparecen en casi cualquier descripción y no ayudan a distinguir un objeto de otro.
+    private static final Set<String> PALABRAS_COMUNES = Set.of("para", "esta", "este", "tiene", "color", "como",
+            "sobre", "desde", "entre", "cerca", "donde", "pero", "creo", "deje", "olvide", "perdi");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -226,6 +236,52 @@ public class Objeto {
                 && (categoria == null || this.categoria == categoria)
                 && (ubicacion == null || this.ubicacion == ubicacion)
                 && (estado == null || this.estado == estado);
+    }
+
+    // HU-23: de 0 a 100, qué tanto se parece a otro objeto; 0 si no pueden ser el mismo objeto.
+    public int puntajeDeCoincidenciaCon(Objeto otro) {
+        if (otro == null || otro == this || tipo == otro.tipo || categoria != otro.categoria
+                || !sigueAbierto() || !otro.sigueAbierto()) {
+            return 0;
+        }
+        long dias = Math.abs(Duration.between(fechaHoraReporte, otro.fechaHoraReporte).toDays());
+        if (dias > DIAS_MAXIMOS_COINCIDENCIA) {
+            return 0;
+        }
+        int puntaje = 40;
+        if (ubicacion == otro.ubicacion) {
+            puntaje += 25;
+        }
+        puntaje += dias <= 3 ? 15 : dias <= 7 ? 10 : 5;
+        Set<String> comunes = palabrasClave();
+        comunes.retainAll(otro.palabrasClave());
+        return puntaje + Math.min(20, 5 * comunes.size());
+    }
+
+    // HU-23: las posibles coincidencias con los candidatos que llegan al puntaje mínimo.
+    public List<Coincidencia> detectarCoincidencias(List<Objeto> candidatos) {
+        LocalDateTime ahora = LocalDateTime.now();
+        List<Coincidencia> detectadas = new ArrayList<>();
+        for (Objeto otro : candidatos) {
+            int puntaje = puntajeDeCoincidenciaCon(otro);
+            if (puntaje >= Coincidencia.PUNTAJE_MINIMO) {
+                detectadas.add(esPerdido() ? new Coincidencia(this, otro, puntaje, ahora)
+                        : new Coincidencia(otro, this, puntaje, ahora));
+            }
+        }
+        return detectadas;
+    }
+
+    private boolean sigueAbierto() {
+        return activo && !fueEntregado() && !estaArchivado();
+    }
+
+    private Set<String> palabrasClave() {
+        String sinTildes = Normalizer.normalize((nombre + " " + descripcion).toLowerCase(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return Arrays.stream(sinTildes.split("[^a-z0-9]+"))
+                .filter(palabra -> palabra.length() >= 4 && !PALABRAS_COMUNES.contains(palabra))
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     public boolean tieneImagen() {
