@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Objetos recientes')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('inicio')}"></header>
+
+<main class="contenido">
+    <a class="volver" th:href="@{/}">← Volver al inicio</a>
+
+    <div class="pagina-titulo">
+        <h1>Objetos recientes</h1>
+        <p class="texto-secundario">Los últimos objetos reportados, del más nuevo al más antiguo.</p>
+    </div>
+
+    <th:block th:unless="${recientes.isEmpty()}">
+        <ul class="tarjetas" th:if="${yo.esEstudiante()}">
+            <li th:each="o : ${recientes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
+        </ul>
+        <th:block th:unless="${yo.esEstudiante()}">
+            <div th:replace="~{fragmentos :: tabla(${recientes})}"></div>
+        </th:block>
+    </th:block>
+
+    <p class="vacio panel" th:if="${recientes.isEmpty()}">Todavía no hay objetos reportados.</p>
+</main>
+</body>
+</html>

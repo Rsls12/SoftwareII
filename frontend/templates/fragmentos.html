@@ -71,6 +71,10 @@
            th:text="|${o.tipo.etiqueta} · ${o.categoria.etiqueta} · ${o.ubicacion.etiqueta} · ${#temporals.format(o.fechaHoraReporte, 'dd/MM/yyyy')}|">
             Perdido · Tecnología · Pabellón C · 01/10/2026
         </p>
+        <p class="tarjeta__meta" th:if="${o.tieneHistorial()}"
+           th:text="|Actualizado ${#temporals.format(o.fechaUltimaActualizacion, 'dd/MM/yyyy HH:mm')}|">
+            Actualizado 02/10/2026 10:30
+        </p>
     </div>
 </a>
 

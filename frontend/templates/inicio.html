@@ -32,7 +32,10 @@
         </section>
 
         <section class="seccion" aria-labelledby="titulo-recientes">
-            <h2 id="titulo-recientes">Objetos recientes</h2>
+            <div class="seccion__cabecera">
+                <h2 id="titulo-recientes">Objetos recientes</h2>
+                <a th:href="@{/recientes}">Ver todos</a>
+            </div>
             <ul class="tarjetas">
                 <li th:each="o : ${recientes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
             </ul>
@@ -50,7 +53,7 @@
         <section class="seccion" aria-labelledby="titulo-recientes-staff">
             <div class="seccion__cabecera">
                 <h2 id="titulo-recientes-staff">Objetos recientes</h2>
-                <a th:href="@{/buscar}">Ver todos</a>
+                <a th:href="@{/recientes}">Ver todos</a>
             </div>
             <div th:replace="~{fragmentos :: tabla(${recientes})}"></div>
         </section>

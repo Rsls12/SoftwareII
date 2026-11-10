@@ -59,8 +59,10 @@ public class RutasWeb {
                 .GET("/objetos/{id}/editar", this::editar)
                 .POST("/objetos/{id}", this::guardarEdicion)
                 .POST("/objetos/{id}/eliminar", this::eliminar)
+                .DELETE("/objetos/{id}", this::eliminar)
                 .GET("/buscar", this::buscar)
                 .GET("/mis-publicaciones", this::misPublicaciones)
+                .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
                 .GET("/api/categorias", this::categorias)
                 .build();
@@ -198,6 +200,12 @@ public class RutasWeb {
     }
 
     // ---------- Mis publicaciones (HU-18) e historial de entregas (HU-22) ----------
+
+    private ServerResponse recientes(ServerRequest peticion) {
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        modelo.put("recientes", objetos.recientes(30));
+        return ServerResponse.ok().render("recientes", modelo);
+    }
 
     private ServerResponse misPublicaciones(ServerRequest peticion) {
         Usuario yo = yo(peticion);
