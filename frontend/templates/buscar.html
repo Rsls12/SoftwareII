@@ -6,7 +6,9 @@
 <header th:replace="~{fragmentos :: nav('buscar')}"></header>
 
 <main class="contenido">
-    <h1>Buscar objetos</h1>
+    <div class="pagina-titulo">
+        <h1>Buscar objetos</h1>
+    </div>
 
     <form class="filtros panel" th:action="@{/buscar}" method="get" role="search">
         <div class="campo campo--ancho">

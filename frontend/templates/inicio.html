@@ -28,7 +28,7 @@
             <ul class="tarjetas" th:unless="${misReportes.isEmpty()}">
                 <li th:each="o : ${misReportes}"><a th:replace="~{fragmentos :: tarjeta(${o})}"></a></li>
             </ul>
-            <p class="texto-secundario" th:if="${misReportes.isEmpty()}">Aún no has reportado ningún objeto.</p>
+            <p class="vacio" th:if="${misReportes.isEmpty()}">Aún no has reportado ningún objeto.</p>
         </section>
 
         <section class="seccion" aria-labelledby="titulo-recientes">
