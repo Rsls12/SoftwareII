@@ -486,6 +486,33 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
   box-shadow: none;
 }
 
+/* ---------- Categorías más frecuentes (HU-39) ---------- */
+.ranking { display: grid; gap: var(--sp-4); margin: 0; list-style: none; counter-reset: ranking; }
+.ranking__fila {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "nombre dato" "barra barra" "detalle detalle";
+  gap: var(--sp-1) var(--sp-3);
+  align-items: center;
+  counter-increment: ranking;
+}
+.ranking__nombre { grid-area: nombre; font-weight: 700; }
+.ranking__nombre::before { content: counter(ranking) ". "; color: var(--c-text-muted); }
+.ranking__dato { grid-area: dato; font-family: var(--font-mono); font-size: var(--fs-sm); text-align: right; }
+.ranking__barra {
+  grid-area: barra;
+  height: 0.5rem;
+  overflow: hidden;
+  background: var(--c-accent-soft);
+  border-radius: var(--radius-pill);
+}
+.ranking__barra span { display: block; height: 100%; background: var(--c-accent); border-radius: inherit; }
+.ranking__detalle { grid-area: detalle; font-size: var(--fs-xs); color: var(--c-text-muted); }
+
+@media (min-width: 768px) {
+  .ranking__fila { grid-template-columns: 10rem 1fr 6rem; grid-template-areas: "nombre barra dato" ". detalle detalle"; }
+}
+
 /* ---------- Login ---------- */
 .login { display: grid; place-items: center; min-height: 100dvh; padding: var(--sp-4); }
 .login__caja { display: grid; gap: var(--sp-6); width: 100%; max-width: 24rem; }

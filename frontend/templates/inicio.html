@@ -57,6 +57,23 @@
             </div>
             <div th:replace="~{fragmentos :: tabla(${recientes})}"></div>
         </section>
+
+        <!-- HU-39: categorías con más objetos reportados -->
+        <section class="seccion" th:if="${yo.esOficina()}" aria-labelledby="titulo-categorias">
+            <div class="seccion__cabecera">
+                <h2 id="titulo-categorias">Categorías más frecuentes</h2>
+            </div>
+            <ol class="ranking panel" th:unless="${categorias.isEmpty()}">
+                <li class="ranking__fila" th:each="f : ${categorias}">
+                    <span class="ranking__nombre" th:text="${f.categoria().etiqueta}">Tecnología</span>
+                    <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${f.porcentaje()}%|"></span></span>
+                    <span class="ranking__dato" th:text="|${f.total()} (${f.porcentaje()} %)|">5 (40 %)</span>
+                    <span class="ranking__detalle"
+                          th:text="|${f.perdidos()} ${f.perdidos() == 1 ? 'perdido' : 'perdidos'} · ${f.encontrados()} ${f.encontrados() == 1 ? 'encontrado' : 'encontrados'}|">3 perdidos · 2 encontrados</span>
+                </li>
+            </ol>
+            <p class="vacio" th:if="${categorias.isEmpty()}">Aún no hay objetos registrados.</p>
+        </section>
     </th:block>
 </main>
 </body>

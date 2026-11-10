@@ -43,6 +43,23 @@ class PantallasTest {
 
     @Test
     @WithUserDetails(OFICINA)
+    void oficinaVeLasCategoriasMasFrecuentesEnSuInicio() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Categorías más frecuentes")))
+                .andExpect(content().string(containsString("perdidos · ")));
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void estudianteNoVeLasCategoriasMasFrecuentes() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Categorías más frecuentes"))));
+    }
+
+    @Test
+    @WithUserDetails(OFICINA)
     void oficinaCambiaElEstadoYElCambioApareceEnElDetalle() throws Exception {
         Long id = reporteDeAna("Paraguas negro", "Paraguas negro con mango de madera").getIdObjeto();
 

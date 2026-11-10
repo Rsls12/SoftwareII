@@ -87,6 +87,9 @@ public class RutasWeb {
         modelo.put("recientes", objetos.recientes(6));
         modelo.put("misReportes", objetos.findByReportadoPorAndActivoTrueOrderByFechaHoraReporteDesc(yo)
                 .stream().limit(3).toList());
+        if (yo.esOficina()) {
+            modelo.put("categorias", objetos.categoriasMasFrecuentes());
+        }
         return ServerResponse.ok().render("inicio", modelo);
     }
 

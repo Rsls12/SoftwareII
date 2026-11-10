@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Entrega;
 import pe.edu.ufound.model.EstadoObjeto;
+import pe.edu.ufound.model.FrecuenciaCategoria;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.TipoObjeto;
@@ -44,6 +45,12 @@ public interface ObjetoRepository extends JpaRepository<Objeto, Long> {
                 .map(Objeto::getEntrega)
                 .sorted(Comparator.comparing(Entrega::getFechaHoraEntrega).reversed())
                 .toList();
+    }
+
+    // HU-39: ranking de categorías de los objetos activos (los reportes eliminados no cuentan).
+    // shortcut: cuenta en memoria como buscar(); pasar a un GROUP BY en la base si hay miles de objetos.
+    default List<FrecuenciaCategoria> categoriasMasFrecuentes() {
+        return FrecuenciaCategoria.de(findByActivoTrueOrderByFechaHoraReporteDesc());
     }
 
     // HU-19: los últimos objetos reportados.
