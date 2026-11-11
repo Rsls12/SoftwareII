@@ -11,6 +11,9 @@
     <div class="pagina-titulo">
         <h1>Notificaciones</h1>
         <p class="texto-secundario">Te avisamos cuando se registra un objeto que podría ser el que perdiste.</p>
+        <!-- HU-27: cuántas notificaciones no se han revisado todavía. -->
+        <p class="texto-secundario" th:if="${pendientes > 0}"
+           th:text="${pendientes} + (${pendientes == 1} ? ' notificación sin leer' : ' notificaciones sin leer')">2 notificaciones sin leer</p>
     </div>
 
     <ul class="notificaciones" th:unless="${notificaciones.isEmpty()}">
@@ -24,6 +27,10 @@
             <div class="notificacion__acciones">
                 <a th:href="@{/objetos/{id}(id=${n.coincidencia.objetoEncontrado.idObjeto})}">Ver objeto encontrado</a>
                 <a th:href="@{/objetos/{id}(id=${n.coincidencia.objetoPerdido.idObjeto})}">Ver mi reporte</a>
+                <!-- HU-27: solo se ofrece marcar como leída la que todavía no lo está. -->
+                <form th:unless="${n.leida}" th:action="@{/notificaciones/{id}/leida(id=${n.idNotificacion})}" method="post">
+                    <button class="boton-enlace" type="submit">Marcar como leída</button>
+                </form>
             </div>
         </li>
     </ul>

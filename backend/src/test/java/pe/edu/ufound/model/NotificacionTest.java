@@ -45,4 +45,21 @@ class NotificacionTest {
         assertFalse(detectadas.get(0).esRelevante());
         assertTrue(Notificacion.de(detectadas).isEmpty());
     }
+
+    // ---------- HU-27: marcar como leída ----------
+
+    @Test
+    void unaNotificacionNuevaSeMarcaComoLeida() {
+        Objeto perdida = new Objeto("Laptop Lenovo gris", "Laptop Lenovo con sticker de la NASA", TipoObjeto.PERDIDO,
+                CategoriaObjeto.TECNOLOGIA, Pabellon.PABELLON_C, null, HOY, ana);
+        Objeto encontrada = new Objeto("Laptop gris", "Lenovo gris con sticker NASA", TipoObjeto.ENCONTRADO,
+                CategoriaObjeto.TECNOLOGIA, Pabellon.PABELLON_C, null, HOY.plusHours(2), jorge);
+        Notificacion aviso = Notificacion.de(encontrada.detectarCoincidencias(List.of(perdida))).get(0);
+
+        assertFalse(aviso.isLeida());
+
+        aviso.marcarComoLeida();
+
+        assertTrue(aviso.isLeida());
+    }
 }

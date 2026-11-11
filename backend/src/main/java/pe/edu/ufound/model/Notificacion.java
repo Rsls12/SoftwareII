@@ -62,6 +62,16 @@ public class Notificacion {
                 .toList();
     }
 
+    // HU-27: el estudiante marca una notificación como leída una vez que ya la revisó.
+    public void marcarComoLeida() {
+        this.leida = true;
+    }
+
+    // HU-27: para que un estudiante no pueda marcar como leída la notificación de otro.
+    public boolean esDe(Usuario usuario) {
+        return usuario != null && destinatario.getIdUsuario().equals(usuario.getIdUsuario());
+    }
+
     public Long getIdNotificacion() { return idNotificacion; }
     public Usuario getDestinatario() { return destinatario; }
     public Coincidencia getCoincidencia() { return coincidencia; }
