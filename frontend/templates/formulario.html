@@ -32,18 +32,29 @@
           th:action="${editando} ? @{/objetos/{id}(id=${objeto.idObjeto})} : @{/objetos}">
 
         <div class="campo">
-            <label for="nombre">¿Qué objeto es?</label>
+            <div class="campo__etiqueta">
+                <label for="nombre">¿Qué objeto es?</label>
+                <span id="badge-nombre" class="estado estado--coincidencia campo__sugerido"
+                      th:hidden="${nombreSugerido == null}">Sugerido</span>
+            </div>
             <input id="nombre" name="nombre" type="text" maxlength="80" required
                    placeholder="Ej. Laptop Lenovo gris"
-                   th:value="${editando} ? ${objeto.nombre}" th:disabled="${editando}">
+                   th:classappend="${nombreSugerido != null} ? 'campo--sugerido'"
+                   th:value="${editando} ? ${objeto.nombre} : ${nombreSugerido}" th:disabled="${editando}">
         </div>
 
         <div class="campo">
-            <label for="categoria">Categoría</label>
-            <select id="categoria" name="categoria" required th:disabled="${editando}">
+            <div class="campo__etiqueta">
+                <label for="categoria">Categoría</label>
+                <span id="badge-categoria" class="estado estado--coincidencia campo__sugerido"
+                      th:hidden="${categoriaSugerida == null}">Sugerido</span>
+            </div>
+            <select id="categoria" name="categoria" required
+                    th:classappend="${categoriaSugerida != null} ? 'campo--sugerido'"
+                    th:disabled="${editando}">
                 <option value="">Elige una categoría</option>
                 <option th:each="c : ${categorias}" th:value="${c}" th:text="${c.etiqueta}"
-                        th:selected="${editando and c == objeto.categoria}">Tecnología</option>
+                        th:selected="${(editando and c == objeto.categoria) or (!editando and c == categoriaSugerida)}">Tecnología</option>
             </select>
         </div>
 
@@ -57,17 +68,21 @@
         </div>
 
         <div class="campo">
-            <label for="descripcion">Descripción física</label>
+            <div class="campo__etiqueta">
+                <label for="descripcion">Descripción física</label>
+                <span id="badge-descripcion" class="estado estado--coincidencia campo__sugerido"
+                      th:hidden="${descripcionSugerida == null}">Sugerido</span>
+            </div>
             <textarea id="descripcion" name="descripcion" minlength="10" maxlength="500" required
                       aria-describedby="ayuda-descripcion"
                       placeholder="Color, marca, stickers, marcas o cualquier detalle que lo identifique."
-                      th:text="${editando} ? ${objeto.descripcion}"></textarea>
+                      th:classappend="${descripcionSugerida != null} ? 'campo--sugerido'"
+                      th:text="${editando} ? ${objeto.descripcion} : ${descripcionSugerida}"></textarea>
             <p id="ayuda-descripcion" class="campo__ayuda">Entre 10 y 500 caracteres.</p>
         </div>
 
         <div class="campo">
             <label for="foto">Foto (opcional)</label>
-            <!-- Avisa antes de enviar si la foto pasa de 5 MB (el servidor la rechazaría y se perdería el formulario). -->
             <input id="foto" name="foto" type="file" accept="image/*" aria-describedby="ayuda-foto"
                    onchange="this.setCustomValidity(this.files[0] && this.files[0].size > 5 * 1024 * 1024 ? 'La foto pesa más de 5 MB. Elige una más liviana.' : '')">
             <p id="ayuda-foto" class="campo__ayuda"
@@ -81,6 +96,60 @@
             <a class="boton boton--secundario" th:href="${editando} ? @{/objetos/{id}(id=${objeto.idObjeto})} : @{/}">Cancelar</a>
         </div>
     </form>
+
+    <script th:if="${!editando}">
+        (function () {
+            var inputFoto = document.getElementById('foto');
+            var campoNombre = document.getElementById('nombre');
+            var campoCategoria = document.getElementById('categoria');
+            var campoDescripcion = document.getElementById('descripcion');
+
+            function marcarSugerido(campo, idBadge, valor) {
+                if (!valor || campo.disabled) return;
+                campo.value = valor;
+                campo.classList.add('campo--sugerido');
+                var badge = document.getElementById(idBadge);
+                if (badge) badge.hidden = false;
+            }
+
+            function limpiarAlEditar(campo, idBadge) {
+                campo.addEventListener('input', function () {
+                    campo.classList.remove('campo--sugerido');
+                    var badge = document.getElementById(idBadge);
+                    if (badge) badge.hidden = true;
+                });
+            }
+
+            limpiarAlEditar(campoNombre, 'badge-nombre');
+            limpiarAlEditar(campoCategoria, 'badge-categoria');
+            limpiarAlEditar(campoDescripcion, 'badge-descripcion');
+
+            window.autocompletarFormularioObjeto = function (datos) {
+                if (datos.nombre && !campoNombre.value.trim()) {
+                    marcarSugerido(campoNombre, 'badge-nombre', datos.nombre);
+                }
+                if (datos.categoria && !campoCategoria.value) {
+                    marcarSugerido(campoCategoria, 'badge-categoria', datos.categoria);
+                }
+                if (datos.descripcion && !campoDescripcion.value.trim()) {
+                    marcarSugerido(campoDescripcion, 'badge-descripcion', datos.descripcion);
+                }
+            };
+
+            inputFoto.addEventListener('change', function () {
+                var archivo = this.files[0];
+                if (!archivo || archivo.size > 5 * 1024 * 1024) return;
+                var base = archivo.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim();
+                fetch('/api/autocompletar?tipo=' + encodeURIComponent(base))
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (sugerencia) {
+                        if (sugerencia) {
+                            window.autocompletarFormularioObjeto(sugerencia);
+                        }
+                    });
+            });
+        })();
+    </script>
 </main>
 </body>
 </html>

@@ -130,6 +130,38 @@
 
     </th:block>
 
+    <section class="seccion" aria-labelledby="titulo-coincidencias" th:if="${objeto.esPerdido()}">
+        <div class="seccion__cabecera">
+            <h2 id="titulo-coincidencias">Posibles coincidencias</h2>
+        </div>
+
+        <ul class="tarjetas" th:unless="${coincidencias.isEmpty()}">
+            <li th:each="c : ${coincidencias}">
+                <a class="tarjeta" th:href="@{/objetos/{id}(id=${c.objetoEncontrado.idObjeto})}">
+                    <img th:if="${c.objetoEncontrado.imagenUrl}" class="tarjeta__foto"
+                         th:src="${c.objetoEncontrado.imagenUrl}" alt="">
+                    <span th:unless="${c.objetoEncontrado.imagenUrl}" class="tarjeta__foto" aria-hidden="true"
+                          th:text="${c.objetoEncontrado.categoria.etiqueta.substring(0, 1)}">T</span>
+                    <div class="tarjeta__cuerpo">
+                        <div class="tarjeta__cabecera">
+                            <span th:replace="~{fragmentos :: nivel(${c.nivelCoincidencia})}"></span>
+                            <code th:text="|${c.puntaje} % · ${c.objetoEncontrado.codigo}|">80 % · UF-0002</code>
+                        </div>
+                        <h3 class="tarjeta__titulo" th:text="${c.objetoEncontrado.nombre}">Objeto encontrado</h3>
+                        <p class="tarjeta__meta"
+                           th:text="|${c.objetoEncontrado.categoria.etiqueta} · ${c.objetoEncontrado.ubicacion.etiqueta} · ${#temporals.format(c.objetoEncontrado.fechaHoraReporte, 'dd/MM/yyyy')}|">
+                            Tecnología · Pabellón C · 01/10/2026
+                        </p>
+                    </div>
+                </a>
+            </li>
+        </ul>
+
+        <p class="texto-secundario" th:if="${coincidencias.isEmpty()}">
+            Aún no se han detectado posibles coincidencias para este objeto.
+        </p>
+    </section>
+
     <!-- ===== Historial de estados (Línea de tiempo para seguimiento del objeto) ===== -->
     <section class="seccion" aria-labelledby="titulo-historial">
         <h2 id="titulo-historial">Historial de estados</h2>

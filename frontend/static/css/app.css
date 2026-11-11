@@ -401,6 +401,10 @@ input[type="file"]::file-selector-button {
 input:disabled, select:disabled { color: var(--c-text-muted); background: var(--c-bg); border-style: dashed; }
 input:user-invalid, select:user-invalid, textarea:user-invalid { border-color: var(--c-error); }
 
+.campo__etiqueta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); }
+.campo--sugerido { border-color: var(--st-coincidencia-fg); background: var(--st-coincidencia-bg); }
+.campo__sugerido[hidden] { display: none; }
+
 /* Filtros de búsqueda: 2 columnas en celular, una sola fila en escritorio. */
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); align-items: end; }
 .filtros .campo--ancho { grid-column: 1 / -1; }

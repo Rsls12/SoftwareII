@@ -79,6 +79,7 @@ public class RutasWeb {
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
                 .GET("/api/categorias", this::categorias)
+                .GET("/api/autocompletar", this::autocompletar)
                 .build();
     }
 
@@ -107,7 +108,18 @@ public class RutasWeb {
     // ---------- Registrar objeto perdido o encontrado (HU-04 a HU-11) ----------
 
     private ServerResponse nuevo(ServerRequest peticion) {
-        return ServerResponse.ok().render("formulario", modelo(peticion, yo(peticion)));
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        String tipo = texto(peticion, "tipo");
+        String marca = texto(peticion, "marca");
+        String color = texto(peticion, "color");
+        String detalle = texto(peticion, "detalle");
+        if (tipo != null || marca != null || color != null || detalle != null) {
+            String nombreSugerido = Objeto.sugerirNombre(tipo, marca, color);
+            modelo.put("nombreSugerido", nombreSugerido);
+            modelo.put("descripcionSugerida", Objeto.sugerirDescripcion(tipo, marca, color, detalle));
+            modelo.put("categoriaSugerida", Objeto.sugerirCategoria(nombreSugerido + " " + (detalle != null ? detalle : "")));
+        }
+        return ServerResponse.ok().render("formulario", modelo);
     }
 
     private ServerResponse registrar(ServerRequest peticion) {
@@ -144,6 +156,9 @@ public class RutasWeb {
         modelo.put("objeto", objeto);
         modelo.put("historial", objeto.getHistorial());
         modelo.put("entrega", objeto.getEntrega());
+        if (objeto.esPerdido()) {
+            modelo.put("coincidencias", coincidencias.de(objeto));
+        }
         return ServerResponse.ok().render("detalle", modelo);
     }
 
@@ -285,6 +300,22 @@ public class RutasWeb {
                 Arrays.stream(CategoriaObjeto.values())
                         .map(categoria -> Map.of("codigo", categoria.name(), "etiqueta", categoria.getEtiqueta()))
                         .toList());
+    }
+
+    private ServerResponse autocompletar(ServerRequest peticion) {
+        String tipo = texto(peticion, "tipo");
+        String marca = texto(peticion, "marca");
+        String color = texto(peticion, "color");
+        String detalle = texto(peticion, "detalle");
+        String nombreSugerido = Objeto.sugerirNombre(tipo, marca, color);
+        String descripcionSugerida = Objeto.sugerirDescripcion(tipo, marca, color, detalle);
+        CategoriaObjeto categoriaSugerida = Objeto.sugerirCategoria(
+                nombreSugerido + " " + (detalle != null ? detalle : ""));
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of(
+                "nombre", nombreSugerido,
+                "descripcion", descripcionSugerida,
+                "categoria", categoriaSugerida.name()
+        ));
     }
 
     // ---------- Lectura de la petición ----------
