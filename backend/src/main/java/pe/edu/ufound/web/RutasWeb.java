@@ -74,6 +74,8 @@ public class RutasWeb {
                 .GET("/buscar", this::buscar)
                 .GET("/mis-publicaciones", this::misPublicaciones)
                 .GET("/notificaciones", this::notificaciones)
+                .POST("/notificaciones/{id}/leida", this::marcarNotificacionLeida)
+                .GET("/coincidencias", this::coincidencias)
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
                 .GET("/api/categorias", this::categorias)
@@ -97,6 +99,7 @@ public class RutasWeb {
                 .stream().limit(3).toList());
         if (yo.esOficina()) {
             modelo.put("categorias", objetos.categoriasMasFrecuentes());
+            modelo.put("zonas", objetos.zonasConMasPerdidas());
         }
         return ServerResponse.ok().render("inicio", modelo);
     }
@@ -238,13 +241,35 @@ public class RutasWeb {
         return ServerResponse.ok().render("mis-publicaciones", modelo);
     }
 
-    // ---------- Notificaciones del estudiante (HU-26) ----------
+    // ---------- Notificaciones del estudiante (HU-26, HU-27) ----------
 
     private ServerResponse notificaciones(ServerRequest peticion) {
         Usuario yo = yo(peticion);
+        List<Notificacion> propias = notificaciones.findByDestinatarioOrderByFechaHoraDescIdNotificacionDesc(yo);
         Map<String, Object> modelo = modelo(peticion, yo);
-        modelo.put("notificaciones", notificaciones.findByDestinatarioOrderByFechaHoraDescIdNotificacionDesc(yo));
+        modelo.put("notificaciones", propias);
+        // HU-27: cuántas quedan pendientes, para el contador de la pantalla.
+        modelo.put("pendientes", propias.stream().filter(n -> !n.isLeida()).count());
         return ServerResponse.ok().render("notificaciones", modelo);
+    }
+
+    // HU-27: marca como leída solo si la notificación es del estudiante que la pide.
+    private ServerResponse marcarNotificacionLeida(ServerRequest peticion) {
+        Notificacion notificacion = notificacionDe(peticion);
+        if (!notificacion.esDe(yo(peticion))) {
+            throw new OperacionNoPermitidaException();
+        }
+        notificacion.marcarComoLeida();
+        notificaciones.save(notificacion);
+        return redirigir(peticion, "/notificaciones", null);
+    }
+
+    // ---------- Coincidencias para la Oficina (HU-24) ----------
+
+    private ServerResponse coincidencias(ServerRequest peticion) {
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        modelo.put("coincidencias", coincidencias.findAllByOrderByPuntajeDesc());
+        return ServerResponse.ok().render("coincidencias", modelo);
     }
 
     private ServerResponse historialDeEntregas(ServerRequest peticion) {
@@ -273,6 +298,15 @@ public class RutasWeb {
     private Objeto objetoDe(ServerRequest peticion) {
         try {
             return objetos.findById(Long.valueOf(peticion.pathVariable("id")))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    private Notificacion notificacionDe(ServerRequest peticion) {
+        try {
+            return notificaciones.findById(Long.valueOf(peticion.pathVariable("id")))
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         } catch (NumberFormatException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);

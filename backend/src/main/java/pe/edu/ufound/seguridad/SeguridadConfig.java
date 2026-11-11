@@ -31,8 +31,9 @@ public class SeguridadConfig {
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/login", "/css/**").permitAll()
                         // Las mismas reglas con las que la vista muestra u oculta cada opción.
-                        .requestMatchers("/entregas").hasRole(oficina)
+                        .requestMatchers("/entregas", "/coincidencias").hasRole(oficina)
                         .requestMatchers("/mis-publicaciones", "/notificaciones").hasRole(estudiante)
+                        .requestMatchers(HttpMethod.POST, "/notificaciones/*/leida").hasRole(estudiante)
                         .requestMatchers(HttpMethod.POST, "/objetos/*/estado").hasRole(oficina)
                         .requestMatchers("/objetos/nuevo").hasAnyRole(estudiante, seguridad)
                         .requestMatchers(HttpMethod.POST, "/objetos").hasAnyRole(estudiante, seguridad)

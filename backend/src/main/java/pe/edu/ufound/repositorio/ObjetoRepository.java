@@ -6,6 +6,7 @@ import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Entrega;
 import pe.edu.ufound.model.EstadoObjeto;
 import pe.edu.ufound.model.FrecuenciaCategoria;
+import pe.edu.ufound.model.FrecuenciaUbicacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.TipoObjeto;
@@ -51,6 +52,11 @@ public interface ObjetoRepository extends JpaRepository<Objeto, Long> {
     // shortcut: cuenta en memoria como buscar(); pasar a un GROUP BY en la base si hay miles de objetos.
     default List<FrecuenciaCategoria> categoriasMasFrecuentes() {
         return FrecuenciaCategoria.de(findByActivoTrueOrderByFechaHoraReporteDesc());
+    }
+
+    // HU-40: ranking de pabellones con más objetos perdidos (mismo shortcut que categoriasMasFrecuentes).
+    default List<FrecuenciaUbicacion> zonasConMasPerdidas() {
+        return FrecuenciaUbicacion.de(findByActivoTrueOrderByFechaHoraReporteDesc());
     }
 
     // HU-19: los últimos objetos reportados.

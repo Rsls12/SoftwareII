@@ -283,6 +283,71 @@ class PantallasTest {
         mvc.perform(get("/notificaciones")).andExpect(status().isForbidden());
     }
 
+    // ---------- HU-27: marcar notificación como leída ----------
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void elEstudianteMarcaSuNotificacionComoLeida() throws Exception {
+        Objeto perdida = reporteDeAna("Mochila Totto negra", "Mochila negra con cierre plateado y correa roja");
+        Usuario jorge = usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.SEGURIDAD).orElseThrow();
+        Objeto encontrada = objetos.save(Objeto.reportar("Mochila Totto", "Mochila negra con correa roja y cierre plateado",
+                CategoriaObjeto.OTROS, Pabellon.PABELLON_A, null, jorge));
+        Notificacion aviso = notificaciones.saveAll(
+                Notificacion.de(coincidencias.saveAll(encontrada.detectarCoincidencias(List.of(perdida))))).get(0);
+
+        // Recién creada, aparece como no leída con su botón para marcarla.
+        mvc.perform(get("/notificaciones"))
+                .andExpect(content().string(containsString("&quot;Mochila Totto negra&quot;")))
+                .andExpect(content().string(containsString("Marcar como leída")));
+
+        mvc.perform(post("/notificaciones/" + aviso.getIdNotificacion() + "/leida").with(csrf()))
+                .andExpect(redirectedUrl("/notificaciones"));
+
+        assertTrue(notificaciones.findById(aviso.getIdNotificacion()).orElseThrow().isLeida());
+    }
+
+    @Test
+    void otroEstudianteNoMarcaLaNotificacionDeAnaComoLeida() throws Exception {
+        Objeto perdida = reporteDeAna("Paraguas rojo", "Paraguas rojo con mango curvo de madera");
+        Usuario jorge = usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.SEGURIDAD).orElseThrow();
+        Objeto encontrada = objetos.save(Objeto.reportar("Paraguas rojo", "Paraguas rojo con mango de madera curvo",
+                CategoriaObjeto.OTROS, Pabellon.PABELLON_A, null, jorge));
+        Notificacion aviso = notificaciones.saveAll(
+                Notificacion.de(coincidencias.saveAll(encontrada.detectarCoincidencias(List.of(perdida))))).get(0);
+
+        // Otro estudiante tiene el rol correcto para esta ruta, pero no es el dueño de ESTA notificación.
+        mvc.perform(post("/notificaciones/" + aviso.getIdNotificacion() + "/leida")
+                        .with(user(DatosDePrueba.SIN_CONTRASENA).roles("ESTUDIANTE")).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        assertFalse(notificaciones.findById(aviso.getIdNotificacion()).orElseThrow().isLeida());
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void marcarUnaNotificacionQueNoExisteDa404() throws Exception {
+        mvc.perform(post("/notificaciones/999999/leida").with(csrf())).andExpect(status().isNotFound());
+    }
+
+    // ---------- HU-40: zonas con más pérdidas ----------
+
+    @Test
+    @WithUserDetails(OFICINA)
+    void oficinaVeLasZonasConMasPerdidasEnSuInicio() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Zonas con más pérdidas")))
+                .andExpect(content().string(containsString("Pabellón")));
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void estudianteNoVeLasZonasConMasPerdidas() throws Exception {
+        mvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("Zonas con más pérdidas"))));
+    }
+
     private Objeto reporteDeAna(String nombre, String descripcion) {
         return objetos.save(Objeto.reportar(nombre, descripcion, CategoriaObjeto.OTROS, Pabellon.PABELLON_A, null,
                 usuarios.findFirstByRolOrderByIdUsuarioAsc(RolUsuario.ESTUDIANTE).orElseThrow()));

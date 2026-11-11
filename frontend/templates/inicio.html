@@ -74,6 +74,21 @@
             </ol>
             <p class="vacio" th:if="${categorias.isEmpty()}">Aún no hay objetos registrados.</p>
         </section>
+
+        <!-- HU-40: pabellones donde más se pierden objetos -->
+        <section class="seccion" th:if="${yo.esOficina()}" aria-labelledby="titulo-zonas">
+            <div class="seccion__cabecera">
+                <h2 id="titulo-zonas">Zonas con más pérdidas</h2>
+            </div>
+            <ol class="ranking panel" th:unless="${zonas.isEmpty()}">
+                <li class="ranking__fila" th:each="z : ${zonas}">
+                    <span class="ranking__nombre" th:text="${z.ubicacion().etiqueta}">Pabellón A</span>
+                    <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${z.porcentaje()}%|"></span></span>
+                    <span class="ranking__dato" th:text="|${z.cantidad()} (${z.porcentaje()} %)|">5 (40 %)</span>
+                </li>
+            </ol>
+            <p class="vacio" th:if="${zonas.isEmpty()}">Aún no hay objetos perdidos registrados.</p>
+        </section>
     </th:block>
 </main>
 </body>
