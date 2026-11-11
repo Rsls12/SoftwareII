@@ -256,6 +256,11 @@ code { font-family: var(--font-mono); font-size: var(--fs-sm); font-variant-nume
 .estado--entregado    { color: var(--st-entregado-fg);    background: var(--st-entregado-bg); border-color: var(--st-entregado-bg); }
 .estado--archivado    { color: var(--st-archivado-fg);    background: var(--st-archivado-bg); border: 1px dashed currentColor; }
 
+/* HU-24: mismo estilo de insignia que .estado, reutilizando sus colores (no se inventan nuevos). */
+.nivel--alto  { color: var(--st-reportado-fg);    background: var(--st-reportado-bg); }
+.nivel--medio { color: var(--st-revision-fg);     background: var(--st-revision-bg); }
+.nivel--bajo  { color: var(--st-archivado-fg);    background: var(--st-archivado-bg); }
+
 /* ---------- Tarjeta de objeto ---------- */
 .tarjetas { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
 

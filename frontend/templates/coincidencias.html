@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- HU-24: coincidencias con su nivel, para que la Oficina priorice cuáles validar primero. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Coincidencias')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('coincidencias')}"></header>
+
+<main class="contenido">
+    <p th:replace="~{fragmentos :: aviso}"></p>
+
+    <div class="pagina-titulo">
+        <h1>Coincidencias</h1>
+        <p class="texto-secundario">Objetos perdidos y encontrados que podrían ser el mismo, de la más parecida a la menos.</p>
+    </div>
+
+    <div class="tabla-contenedor" th:unless="${coincidencias.isEmpty()}">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Nivel</th>
+                <th scope="col">Puntaje</th>
+                <th scope="col">Objeto perdido</th>
+                <th scope="col">Objeto encontrado</th>
+                <th scope="col">Detectada</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${coincidencias}">
+                <td><span th:replace="~{fragmentos :: nivel(${c.nivelCoincidencia})}"></span></td>
+                <td><code th:text="${c.puntaje} + ' %'">90 %</code></td>
+                <td><a th:href="@{/objetos/{id}(id=${c.objetoPerdido.idObjeto})}" th:text="${c.objetoPerdido.nombre}">Laptop gris</a></td>
+                <td><a th:href="@{/objetos/{id}(id=${c.objetoEncontrado.idObjeto})}" th:text="${c.objetoEncontrado.nombre}">Laptop Lenovo</a></td>
+                <td><code th:text="${#temporals.format(c.fechaHoraDeteccion, 'dd/MM/yyyy HH:mm')}">10/11/2026 15:00</code></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="vacio panel" th:if="${coincidencias.isEmpty()}">
+        <p>Todavía no se detectó ninguna coincidencia.</p>
+    </div>
+</main>
+</body>
+</html>

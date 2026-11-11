@@ -21,6 +21,8 @@ public class Coincidencia {
     public static final int PUNTAJE_MINIMO = 60;
     // HU-25: desde este puntaje se avisa al dueño del objeto perdido.
     public static final int PUNTAJE_RELEVANTE = 75;
+    // HU-24: desde este puntaje el nivel es ALTO (coinciden en casi todo: categoría, lugar, fecha y palabras).
+    public static final int PUNTAJE_ALTO = 90;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,6 +54,18 @@ public class Coincidencia {
 
     public boolean esRelevante() {
         return puntaje >= PUNTAJE_RELEVANTE;
+    }
+
+    // HU-24: el puntaje (0-100, calculado en Objeto.puntajeDeCoincidenciaCon) traducido a un nivel
+    // que la Oficina entiende de un vistazo. No se guarda aparte: siempre depende del mismo puntaje.
+    public NivelCoincidencia getNivelCoincidencia() {
+        if (puntaje >= PUNTAJE_ALTO) {
+            return NivelCoincidencia.ALTO;
+        }
+        if (puntaje >= PUNTAJE_RELEVANTE) {
+            return NivelCoincidencia.MEDIO;
+        }
+        return NivelCoincidencia.BAJO;
     }
 
     public Long getIdCoincidencia() { return idCoincidencia; }
