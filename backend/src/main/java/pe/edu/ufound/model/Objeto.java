@@ -2,6 +2,7 @@ package pe.edu.ufound.model;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -98,6 +100,10 @@ public class Objeto {
     @OneToMany(mappedBy = "objeto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
     private List<Entrega> entregas = new ArrayList<>();
+
+    // HU-33: lo que la IA reconoció en la foto; null si no hay foto o no se pudo analizar.
+    @Embedded
+    private CaracteristicasObjeto caracteristicas;
 
     protected Objeto() {
     }
@@ -202,7 +208,20 @@ public class Objeto {
     }
 
     public void adjuntarImagen(String imagenUrl) {
-        this.imagenUrl = validarImagenUrl(imagenUrl);
+        String nueva = validarImagenUrl(imagenUrl);
+        // HU-33: las características describen la foto; con otra foto dejan de valer.
+        if (!Objects.equals(nueva, this.imagenUrl)) {
+            this.caracteristicas = null;
+        }
+        this.imagenUrl = nueva;
+    }
+
+    // HU-33: guarda lo que la IA reconoció en la foto del objeto; sin foto no hay nada que describir.
+    public void registrarCaracteristicas(CaracteristicasObjeto caracteristicas) {
+        if (!tieneImagen()) {
+            throw new DatosInvalidosException("imagenUrl");
+        }
+        this.caracteristicas = requerido(caracteristicas, "caracteristicas");
     }
 
     public void editar(String descripcion, Pabellon ubicacion, String imagenUrl) {
@@ -288,6 +307,10 @@ public class Objeto {
         return imagenUrl != null;
     }
 
+    public boolean tieneCaracteristicas() {
+        return caracteristicas != null;
+    }
+
     public boolean esPerdido() { return tipo == TipoObjeto.PERDIDO; }
     public boolean esEncontrado() { return tipo == TipoObjeto.ENCONTRADO; }
     public boolean estaArchivado() { return estado == EstadoObjeto.ARCHIVADO; }
@@ -304,6 +327,7 @@ public class Objeto {
     public EstadoObjeto getEstado() { return estado; }
     public boolean isActivo() { return activo; }
     public Usuario getReportadoPor() { return reportadoPor; }
+    public CaracteristicasObjeto getCaracteristicas() { return caracteristicas; }
 
     public Entrega getEntrega() { return entregas.isEmpty() ? null : entregas.get(0); }
 

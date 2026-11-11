@@ -15,6 +15,7 @@ import org.springframework.web.util.WebUtils;
 import pe.edu.ufound.almacenamiento.AlmacenamientoImagenes;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
+import pe.edu.ufound.model.CaracteristicasObjeto;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Coincidencia;
 import pe.edu.ufound.model.EstadoObjeto;
@@ -23,6 +24,7 @@ import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
 import pe.edu.ufound.model.TipoObjeto;
 import pe.edu.ufound.model.Usuario;
+import pe.edu.ufound.reconocimiento.ReconocimientoImagenes;
 import pe.edu.ufound.repositorio.CoincidenciaRepository;
 import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
@@ -32,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.springframework.web.servlet.function.RouterFunctions.route;
 
@@ -47,15 +50,17 @@ public class RutasWeb {
     private final NotificacionRepository notificaciones;
     private final UsuarioRepository usuarios;
     private final AlmacenamientoImagenes imagenes;
+    private final ReconocimientoImagenes reconocimiento;
 
     public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias,
                     NotificacionRepository notificaciones, UsuarioRepository usuarios,
-                    AlmacenamientoImagenes imagenes) {
+                    AlmacenamientoImagenes imagenes, ReconocimientoImagenes reconocimiento) {
         this.objetos = objetos;
         this.coincidencias = coincidencias;
         this.notificaciones = notificaciones;
         this.usuarios = usuarios;
         this.imagenes = imagenes;
+        this.reconocimiento = reconocimiento;
     }
 
     @Bean
@@ -115,9 +120,11 @@ public class RutasWeb {
         Objeto objeto = Objeto.reportar(texto(peticion, "nombre"), texto(peticion, "descripcion"),
                 opcion(peticion, "categoria", CategoriaObjeto.class), opcion(peticion, "ubicacion", Pabellon.class),
                 null, yo(peticion));
-        String imagenUrl = imagenes.guardar(foto(peticion));
+        MultipartFile foto = foto(peticion);
+        String imagenUrl = imagenes.guardar(foto);
         try {
             objeto.adjuntarImagen(imagenUrl);
+            reconocerCaracteristicas(objeto, foto);
             objeto = objetos.save(objeto);
         } catch (RuntimeException e) {
             imagenes.eliminar(imagenUrl);
@@ -129,6 +136,9 @@ public class RutasWeb {
         // HU-25: las coincidencias relevantes avisan al estudiante que perdió el objeto.
         notificaciones.saveAll(Notificacion.de(detectadas));
         String aviso = "Listo, quedó registrado con el código " + objeto.getCodigo() + ".";
+        if (objeto.tieneCaracteristicas()) {
+            aviso += " En la foto se reconoció: " + objeto.getCaracteristicas().getObjetoDetectado() + ".";
+        }
         if (!detectadas.isEmpty()) {
             aviso += detectadas.size() == 1 ? " Se detectó 1 posible coincidencia."
                     : " Se detectaron " + detectadas.size() + " posibles coincidencias.";
@@ -183,9 +193,11 @@ public class RutasWeb {
         if (!objeto.puedeEditarlo(yo)) {
             throw new OperacionNoPermitidaException();
         }
-        String imagenUrl = imagenes.guardar(foto(peticion));
+        MultipartFile foto = foto(peticion);
+        String imagenUrl = imagenes.guardar(foto);
         try {
             objeto.editar(texto(peticion, "descripcion"), opcion(peticion, "ubicacion", Pabellon.class), imagenUrl);
+            reconocerCaracteristicas(objeto, foto);
             objetos.save(objeto);
         } catch (RuntimeException e) {
             imagenes.eliminar(imagenUrl);
@@ -326,6 +338,18 @@ public class RutasWeb {
             return Enum.valueOf(tipo, valor);
         } catch (IllegalArgumentException e) {
             throw new DatosInvalidosException(nombre);
+        }
+    }
+
+    // HU-33: si llegó una foto nueva, la IA reconoce en ella las características del objeto.
+    // Si el análisis no está disponible o no reconoce nada, el objeto se guarda igual, sin características.
+    private void reconocerCaracteristicas(Objeto objeto, MultipartFile foto) {
+        if (!objeto.tieneImagen() || foto == null || foto.isEmpty()) {
+            return;
+        }
+        Optional<CaracteristicasObjeto> reconocidas = reconocimiento.analizar(foto);
+        if (reconocidas.isPresent()) {
+            objeto.registrarCaracteristicas(reconocidas.get());
         }
     }
 

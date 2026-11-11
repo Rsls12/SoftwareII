@@ -10,6 +10,7 @@ import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -233,6 +234,70 @@ class ObjetoTest {
         assertNotNull(objeto.getUltimoCambio());
         assertEquals("Pasó de Reportado a En revisión", objeto.getUltimoCambio().getDescripcionCambio());
         assertTrue(objeto.getUltimoCambio().tieneObservacion());
+    }
+
+    // ---------- HU-33: características reconocidas en la foto ----------
+
+    @Test
+    void lasCaracteristicasDeLaFotoSeGuardanConElObjeto() {
+        Objeto objeto = Objeto.reportar("Mochila", "Mochila negra con llavero", CategoriaObjeto.ACCESORIOS,
+                Pabellon.PABELLON_D, "/imagenes/mochila.png", conRol(RolUsuario.ESTUDIANTE));
+        objeto.registrarCaracteristicas(new CaracteristicasObjeto("Mochila", List.of("negro", "gris"), "Totto",
+                "tela", List.of("llavero de Lima"), LocalDateTime.now()));
+        objetos.save(objeto);
+
+        Objeto guardado = recargar(objeto);
+        assertTrue(guardado.tieneCaracteristicas());
+        CaracteristicasObjeto caracteristicas = guardado.getCaracteristicas();
+        assertEquals("Mochila", caracteristicas.getObjetoDetectado());
+        assertEquals("negro, gris", caracteristicas.getColores());
+        assertEquals("Totto", caracteristicas.getMarca());
+        assertEquals("tela", caracteristicas.getMaterial());
+        assertEquals("llavero de Lima", caracteristicas.getRasgosDistintivos());
+        assertNotNull(caracteristicas.getFechaHoraAnalisis());
+    }
+
+    @Test
+    void unObjetoSinCaracteristicasSeLeeSinCaracteristicas() {
+        Objeto objeto = objetos.save(Objeto.reportar("Gorra", "Gorra roja con visera curva",
+                CategoriaObjeto.ROPA, Pabellon.PABELLON_A, "/imagenes/gorra.png", conRol(RolUsuario.ESTUDIANTE)));
+
+        Objeto guardado = recargar(objeto);
+        assertFalse(guardado.tieneCaracteristicas());
+        assertNull(guardado.getCaracteristicas());
+    }
+
+    @Test
+    void sinFotoNoSeRegistranCaracteristicas() {
+        Objeto objeto = Objeto.reportar("Gorra", "Gorra roja con visera curva", CategoriaObjeto.ROPA,
+                Pabellon.PABELLON_A, null, conRol(RolUsuario.ESTUDIANTE));
+        CaracteristicasObjeto caracteristicas = new CaracteristicasObjeto("Gorra", List.of("rojo"), null, null,
+                null, LocalDateTime.now());
+
+        assertEquals("imagenUrl", assertThrows(DatosInvalidosException.class,
+                () -> objeto.registrarCaracteristicas(caracteristicas)).getCampo());
+        assertEquals("caracteristicas", assertThrows(DatosInvalidosException.class, () -> Objeto.reportar("Gorra",
+                "Gorra roja con visera curva", CategoriaObjeto.ROPA, Pabellon.PABELLON_A, "/imagenes/gorra.png",
+                conRol(RolUsuario.ESTUDIANTE)).registrarCaracteristicas(null)).getCampo());
+        assertFalse(objeto.tieneCaracteristicas());
+    }
+
+    @Test
+    void conOtraFotoLasCaracteristicasAnterioresDejanDeValer() {
+        Objeto objeto = Objeto.reportar("Mochila", "Mochila negra con llavero", CategoriaObjeto.ACCESORIOS,
+                Pabellon.PABELLON_D, "/imagenes/mochila.png", conRol(RolUsuario.ESTUDIANTE));
+        objeto.registrarCaracteristicas(new CaracteristicasObjeto("Mochila", List.of("negro"), null, null, null,
+                LocalDateTime.now()));
+
+        // Editar sin subir otra foto conserva lo reconocido.
+        objeto.editar("Mochila negra con llavero de Lima", Pabellon.PABELLON_D, null);
+        assertTrue(objeto.tieneCaracteristicas());
+
+        // La misma foto tampoco cambia nada; una foto distinta sí.
+        objeto.adjuntarImagen("/imagenes/mochila.png");
+        assertTrue(objeto.tieneCaracteristicas());
+        objeto.editar("Mochila negra con llavero de Lima", Pabellon.PABELLON_D, "/imagenes/otra.png");
+        assertFalse(objeto.tieneCaracteristicas());
     }
 
     private Usuario conRol(RolUsuario rol) {

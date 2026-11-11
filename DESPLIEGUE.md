@@ -23,6 +23,7 @@ Usamos **Render** (plan gratis) con Docker. La base de datos y las fotos siguen 
    - `DB_PASSWORD`
    - `SUPABASE_URL`
    - `SUPABASE_KEY`
+   - `ANTHROPIC_API_KEY` (opcional, HU-33): clave de la API de Anthropic para que la IA reconozca las características de las fotos. Si se deja vacía, la app funciona igual, sin ese análisis.
 5. **Aplicar** (*Apply*). El primer build tarda entre 5 y 10 minutos. Al terminar, Render muestra la URL (`https://ufound-xxxx.onrender.com`).
 6. Abrir `https://<tu-url>/login` y entrar con un usuario de la tabla `usuario` de Supabase.
 
