@@ -19,7 +19,9 @@ import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Coincidencia;
+import pe.edu.ufound.model.Estadistica;
 import pe.edu.ufound.model.EstadoObjeto;
+import pe.edu.ufound.model.FrecuenciaCategoria;
 import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
@@ -30,6 +32,8 @@ import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -84,6 +88,7 @@ public class RutasWeb {
                 .GET("/coincidencias", this::coincidencias)
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
+                .GET("/estadisticas", this::estadisticas)
                 .GET("/api/categorias", this::categorias)
                 .GET("/api/autocompletar", this::autocompletar)
                 .build();
@@ -342,6 +347,26 @@ public class RutasWeb {
         return ServerResponse.ok().render("entregas", modelo);
     }
 
+    // ---------- Estadísticas para la Oficina (HU-38) ----------
+
+    private ServerResponse estadisticas(ServerRequest peticion) {
+        LocalDate desde = fecha(peticion, "desde");
+        LocalDate hasta = fecha(peticion, "hasta");
+        List<Objeto> lista = objetos.findByActivoTrueOrderByFechaHoraReporteDesc().stream()
+                .filter(o -> desde == null || !o.getFechaHoraReporte().toLocalDate().isBefore(desde))
+                .filter(o -> hasta == null || !o.getFechaHoraReporte().toLocalDate().isAfter(hasta))
+                .toList();
+
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        modelo.put("total", lista.size());
+        modelo.put("porEstado", Estadistica.porEstado(lista));
+        modelo.put("porCategoria", FrecuenciaCategoria.de(lista));
+        modelo.put("porMes", Estadistica.porMes(lista));
+        modelo.put("desde", desde);
+        modelo.put("hasta", hasta);
+        return ServerResponse.ok().render("estadisticas", modelo);
+    }
+
     // ---------- Categorías en JSON (HU-05) ----------
 
     private ServerResponse categorias(ServerRequest peticion) {
@@ -405,6 +430,18 @@ public class RutasWeb {
         try {
             return Enum.valueOf(tipo, valor);
         } catch (IllegalArgumentException e) {
+            throw new DatosInvalidosException(nombre);
+        }
+    }
+
+    private static LocalDate fecha(ServerRequest peticion, String nombre) {
+        String valor = peticion.param(nombre).orElse("");
+        if (valor.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(valor);
+        } catch (DateTimeParseException e) {
             throw new DatosInvalidosException(nombre);
         }
     }

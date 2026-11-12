@@ -83,12 +83,14 @@
 
         <div class="campo">
             <label for="foto">Foto (opcional)</label>
-            <input id="foto" name="foto" type="file" accept="image/*" aria-describedby="ayuda-foto"
-                   onchange="this.setCustomValidity(this.files[0] && this.files[0].size > 5 * 1024 * 1024 ? 'La foto pesa más de 5 MB. Elige una más liviana.' : '')">
+            <input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+                   aria-describedby="ayuda-foto">
             <p id="ayuda-foto" class="campo__ayuda"
-               th:text="${editando and objeto.imagenUrl != null} ? 'Si subes otra, reemplaza la actual. Máximo 5 MB.' : 'Ayuda a reconocerlo más rápido. Máximo 5 MB.'">
-                Máximo 5 MB.
+               th:text="${editando and objeto.imagenUrl != null} ? 'Si subes otra, reemplaza la actual. JPG, PNG, GIF o WEBP, máximo 5 MB.' : 'Ayuda a reconocerlo más rápido. JPG, PNG, GIF o WEBP, máximo 5 MB.'">
+                JPG, PNG, GIF o WEBP, máximo 5 MB.
             </p>
+            <img id="vista-previa" class="vista-previa" alt="Vista previa de la foto"
+                 th:src="${editando} ? ${objeto.imagenUrl}" th:hidden="${!editando or objeto.imagenUrl == null}">
         </div>
 
         <div class="acciones">
@@ -96,6 +98,33 @@
             <a class="boton boton--secundario" th:href="${editando} ? @{/objetos/{id}(id=${objeto.idObjeto})} : @{/}">Cancelar</a>
         </div>
     </form>
+
+    <!-- HU-32: valida la foto y muestra la vista previa antes de enviarla. -->
+    <script>
+        (function () {
+            var foto = document.getElementById('foto');
+            var vista = document.getElementById('vista-previa');
+            var formatos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+            foto.addEventListener('change', function () {
+                var archivo = foto.files[0];
+                var error = '';
+                if (archivo && formatos.indexOf(archivo.type) === -1) {
+                    error = 'La foto debe ser JPG, PNG, GIF o WEBP.';
+                } else if (archivo && archivo.size > 5 * 1024 * 1024) {
+                    error = 'La foto pesa más de 5 MB. Elige una más liviana.';
+                }
+                foto.setCustomValidity(error);
+                foto.reportValidity();
+                if (archivo && !error) {
+                    vista.src = URL.createObjectURL(archivo);
+                    vista.hidden = false;
+                } else if (error) {
+                    vista.hidden = true;
+                }
+            });
+        })();
+    </script>
 
     <script th:if="${!editando}">
         (function () {
