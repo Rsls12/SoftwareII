@@ -2,8 +2,10 @@ package pe.edu.ufound.web;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,7 +20,9 @@ import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.model.CaracteristicasObjeto;
 import pe.edu.ufound.model.CategoriaObjeto;
 import pe.edu.ufound.model.Coincidencia;
+import pe.edu.ufound.model.Estadistica;
 import pe.edu.ufound.model.EstadoObjeto;
+import pe.edu.ufound.model.FrecuenciaCategoria;
 import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
@@ -30,6 +34,8 @@ import pe.edu.ufound.repositorio.NotificacionRepository;
 import pe.edu.ufound.repositorio.ObjetoRepository;
 import pe.edu.ufound.repositorio.UsuarioRepository;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -50,16 +56,19 @@ public class RutasWeb {
     private final NotificacionRepository notificaciones;
     private final UsuarioRepository usuarios;
     private final AlmacenamientoImagenes imagenes;
+    private final PasswordEncoder cifrador;
     private final ReconocimientoImagenes reconocimiento;
 
     public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias,
                     NotificacionRepository notificaciones, UsuarioRepository usuarios,
-                    AlmacenamientoImagenes imagenes, ReconocimientoImagenes reconocimiento) {
+                    AlmacenamientoImagenes imagenes, PasswordEncoder cifrador,
+                    ReconocimientoImagenes reconocimiento) {
         this.objetos = objetos;
         this.coincidencias = coincidencias;
         this.notificaciones = notificaciones;
         this.usuarios = usuarios;
         this.imagenes = imagenes;
+        this.cifrador = cifrador;
         this.reconocimiento = reconocimiento;
     }
 
@@ -67,6 +76,8 @@ public class RutasWeb {
     public RouterFunction<ServerResponse> rutas() {
         return route()
                 .GET("/login", this::login)
+                .GET("/registro", this::formularioRegistro)
+                .POST("/registro", this::registrarCuenta)
                 .GET("/", this::inicio)
                 .GET("/objetos/nuevo", this::nuevo)
                 .POST("/objetos", this::registrar)
@@ -83,7 +94,9 @@ public class RutasWeb {
                 .GET("/coincidencias", this::coincidencias)
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
+                .GET("/estadisticas", this::estadisticas)
                 .GET("/api/categorias", this::categorias)
+                .GET("/api/autocompletar", this::autocompletar)
                 .build();
     }
 
@@ -91,7 +104,50 @@ public class RutasWeb {
 
     private ServerResponse login(ServerRequest peticion) {
         // Quien ya inició sesión no necesita ver el formulario otra vez.
-        return peticion.principal().isPresent() ? redirigir(peticion, "/", null) : ServerResponse.ok().render("login");
+        return peticion.principal().isPresent() ? redirigir(peticion, "/", null)
+                : ServerResponse.ok().render("login", modelo(peticion, null));
+    }
+
+    // ---------- Crear cuenta de estudiante desde el acceso de usuarios ----------
+
+    private static final Map<String, String> MENSAJES_REGISTRO = Map.of(
+            "nombres", "Escribe tus nombres (hasta 100 caracteres).",
+            "apellidos", "Escribe tus apellidos (hasta 100 caracteres).",
+            "correo", "Usa tu correo institucional de la Universidad de Lima, por ejemplo 20231234@aloe.ulima.edu.pe.",
+            "correoExistente", "Ya existe una cuenta con ese correo. Inicia sesión o usa otro correo.",
+            "contrasena", "La contraseña debe tener entre 8 y 72 caracteres.",
+            "confirmacion", "Las contraseñas no coinciden.");
+
+    private ServerResponse formularioRegistro(ServerRequest peticion) {
+        return peticion.principal().isPresent() ? redirigir(peticion, "/", null)
+                : ServerResponse.ok().render("registro", new HashMap<String, Object>());
+    }
+
+    private ServerResponse registrarCuenta(ServerRequest peticion) {
+        String correo = texto(peticion, "correo");
+        try {
+            if (correo != null && usuarios.existsByCorreoIgnoreCase(correo.trim())) {
+                throw new DatosInvalidosException("correoExistente");
+            }
+            usuarios.save(Usuario.registrarEstudiante(texto(peticion, "nombres"), texto(peticion, "apellidos"),
+                    correo, texto(peticion, "contrasena"), texto(peticion, "confirmacion"), cifrador::encode));
+        } catch (DatosInvalidosException e) {
+            return registroConError(peticion, e.getCampo());
+        } catch (DataIntegrityViolationException e) {
+            // Otra persona registró el mismo correo un instante antes (correo es único en la tabla usuario).
+            return registroConError(peticion, "correoExistente");
+        }
+        return redirigir(peticion, "/login", "Tu cuenta quedó creada. Ya puedes iniciar sesión.");
+    }
+
+    // Vuelve a mostrar el formulario con el error y lo ya escrito, menos las contraseñas.
+    private ServerResponse registroConError(ServerRequest peticion, String campo) {
+        Map<String, Object> modelo = new HashMap<>();
+        modelo.put("error", MENSAJES_REGISTRO.getOrDefault(campo, "Revisa los datos del formulario."));
+        modelo.put("nombres", texto(peticion, "nombres"));
+        modelo.put("apellidos", texto(peticion, "apellidos"));
+        modelo.put("correo", texto(peticion, "correo"));
+        return ServerResponse.status(HttpStatus.BAD_REQUEST).render("registro", modelo);
     }
 
     // ---------- Inicio según rol (HU-03) y objetos recientes (HU-19) ----------
@@ -112,7 +168,18 @@ public class RutasWeb {
     // ---------- Registrar objeto perdido o encontrado (HU-04 a HU-11) ----------
 
     private ServerResponse nuevo(ServerRequest peticion) {
-        return ServerResponse.ok().render("formulario", modelo(peticion, yo(peticion)));
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        String tipo = texto(peticion, "tipo");
+        String marca = texto(peticion, "marca");
+        String color = texto(peticion, "color");
+        String detalle = texto(peticion, "detalle");
+        if (tipo != null || marca != null || color != null || detalle != null) {
+            String nombreSugerido = Objeto.sugerirNombre(tipo, marca, color);
+            modelo.put("nombreSugerido", nombreSugerido);
+            modelo.put("descripcionSugerida", Objeto.sugerirDescripcion(tipo, marca, color, detalle));
+            modelo.put("categoriaSugerida", Objeto.sugerirCategoria(nombreSugerido + " " + (detalle != null ? detalle : "")));
+        }
+        return ServerResponse.ok().render("formulario", modelo);
     }
 
     private ServerResponse registrar(ServerRequest peticion) {
@@ -154,6 +221,9 @@ public class RutasWeb {
         modelo.put("objeto", objeto);
         modelo.put("historial", objeto.getHistorial());
         modelo.put("entrega", objeto.getEntrega());
+        if (objeto.esPerdido()) {
+            modelo.put("coincidencias", coincidencias.de(objeto));
+        }
         return ServerResponse.ok().render("detalle", modelo);
     }
 
@@ -290,6 +360,26 @@ public class RutasWeb {
         return ServerResponse.ok().render("entregas", modelo);
     }
 
+    // ---------- Estadísticas para la Oficina (HU-38) ----------
+
+    private ServerResponse estadisticas(ServerRequest peticion) {
+        LocalDate desde = fecha(peticion, "desde");
+        LocalDate hasta = fecha(peticion, "hasta");
+        List<Objeto> lista = objetos.findByActivoTrueOrderByFechaHoraReporteDesc().stream()
+                .filter(o -> desde == null || !o.getFechaHoraReporte().toLocalDate().isBefore(desde))
+                .filter(o -> hasta == null || !o.getFechaHoraReporte().toLocalDate().isAfter(hasta))
+                .toList();
+
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        modelo.put("total", lista.size());
+        modelo.put("porEstado", Estadistica.porEstado(lista));
+        modelo.put("porCategoria", FrecuenciaCategoria.de(lista));
+        modelo.put("porMes", Estadistica.porMes(lista));
+        modelo.put("desde", desde);
+        modelo.put("hasta", hasta);
+        return ServerResponse.ok().render("estadisticas", modelo);
+    }
+
     // ---------- Categorías en JSON (HU-05) ----------
 
     private ServerResponse categorias(ServerRequest peticion) {
@@ -297,6 +387,22 @@ public class RutasWeb {
                 Arrays.stream(CategoriaObjeto.values())
                         .map(categoria -> Map.of("codigo", categoria.name(), "etiqueta", categoria.getEtiqueta()))
                         .toList());
+    }
+
+    private ServerResponse autocompletar(ServerRequest peticion) {
+        String tipo = texto(peticion, "tipo");
+        String marca = texto(peticion, "marca");
+        String color = texto(peticion, "color");
+        String detalle = texto(peticion, "detalle");
+        String nombreSugerido = Objeto.sugerirNombre(tipo, marca, color);
+        String descripcionSugerida = Objeto.sugerirDescripcion(tipo, marca, color, detalle);
+        CategoriaObjeto categoriaSugerida = Objeto.sugerirCategoria(
+                nombreSugerido + " " + (detalle != null ? detalle : ""));
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of(
+                "nombre", nombreSugerido,
+                "descripcion", descripcionSugerida,
+                "categoria", categoriaSugerida.name()
+        ));
     }
 
     // ---------- Lectura de la petición ----------
@@ -337,6 +443,18 @@ public class RutasWeb {
         try {
             return Enum.valueOf(tipo, valor);
         } catch (IllegalArgumentException e) {
+            throw new DatosInvalidosException(nombre);
+        }
+    }
+
+    private static LocalDate fecha(ServerRequest peticion, String nombre) {
+        String valor = peticion.param(nombre).orElse("");
+        if (valor.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(valor);
+        } catch (DateTimeParseException e) {
             throw new DatosInvalidosException(nombre);
         }
     }

@@ -147,6 +147,72 @@ public class Objeto {
                 LocalDateTime.now(), agente);
     }
 
+    // HU-35: genera nombre, descripción y categoría sugeridos a partir de los datos detectados en la imagen.
+    public static String sugerirNombre(String tipoDetectado, String marca, String color) {
+        StringBuilder sb = new StringBuilder();
+        if (tipoDetectado != null && !tipoDetectado.isBlank()) {
+            sb.append(tipoDetectado.trim());
+        } else {
+            sb.append("Objeto");
+        }
+        if (marca != null && !marca.isBlank()) {
+            sb.append(" ").append(marca.trim());
+        }
+        if (color != null && !color.isBlank()) {
+            sb.append(" ").append(color.trim().toLowerCase());
+        }
+        String resultado = sb.toString().trim();
+        return resultado.length() > NOMBRE_MAXIMO ? resultado.substring(0, NOMBRE_MAXIMO) : resultado;
+    }
+
+    public static String sugerirDescripcion(String tipoDetectado, String marca, String color, String detalle) {
+        String base = sugerirNombre(tipoDetectado, marca, color);
+        StringBuilder sb = new StringBuilder(base);
+        if (detalle != null && !detalle.isBlank()) {
+            sb.append(" con detalle visible: ").append(detalle.trim());
+        } else {
+            sb.append(" registrado a partir de la imagen subida");
+        }
+        sb.append(".");
+        String resultado = sb.toString();
+        if (resultado.length() < DESCRIPCION_MINIMA) {
+            resultado = resultado + " Sin detalles adicionales.";
+        }
+        return resultado.length() > DESCRIPCION_MAXIMA ? resultado.substring(0, DESCRIPCION_MAXIMA) : resultado;
+    }
+
+    public static CategoriaObjeto sugerirCategoria(String textoAnalisis) {
+        if (textoAnalisis == null || textoAnalisis.isBlank()) {
+            return CategoriaObjeto.OTROS;
+        }
+        String t = textoAnalisis.toLowerCase();
+        if (t.contains("laptop") || t.contains("celular") || t.contains("audifono") || t.contains("audéfono")
+                || t.contains("cargador") || t.contains("tablet") || t.contains("mouse")) {
+            return CategoriaObjeto.TECNOLOGIA;
+        }
+        if (t.contains("dni") || t.contains("carne") || t.contains("carné") || t.contains("tarjeta")
+                || t.contains("documento") || t.contains("billetera")) {
+            return CategoriaObjeto.DOCUMENTOS;
+        }
+        if (t.contains("botella") || t.contains("tomatodo") || t.contains("termo") || t.contains("stanley")) {
+            return CategoriaObjeto.BOTELLAS;
+        }
+        if (t.contains("casaca") || t.contains("polera") || t.contains("gorra") || t.contains("chompa")
+                || t.contains("ropa")) {
+            return CategoriaObjeto.ROPA;
+        }
+        if (t.contains("cuaderno") || t.contains("libro") || t.contains("calculadora") || t.contains("lapicero")
+                || t.contains("cartuchera")) {
+            return CategoriaObjeto.UTILES;
+        }
+        if (t.contains("llave") || t.contains("lentes") || t.contains("reloj") || t.contains("mochila")
+                || t.contains("paraguas")) {
+            return CategoriaObjeto.ACCESORIOS;
+        }
+        return CategoriaObjeto.OTROS;
+    }
+
+
     public String getCodigo() {
         return String.format("UF-%04d", idObjeto);
     }

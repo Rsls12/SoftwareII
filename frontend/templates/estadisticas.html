@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!-- HU-38: estadísticas de objetos para la Oficina. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Estadísticas')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('inicio')}"></header>
+
+<main class="contenido">
+    <a class="volver" th:href="@{/}">← Volver al inicio</a>
+
+    <div class="pagina-titulo">
+        <h1>Estadísticas</h1>
+        <p class="texto-secundario" th:text="|${total} ${total == 1 ? 'objeto' : 'objetos'} en el periodo elegido.|">12 objetos en el periodo elegido.</p>
+    </div>
+
+    <form class="filtros panel" th:action="@{/estadisticas}" method="get">
+        <div class="campo">
+            <label for="desde">Desde</label>
+            <input id="desde" name="desde" type="date" th:value="${desde}">
+        </div>
+        <div class="campo">
+            <label for="hasta">Hasta</label>
+            <input id="hasta" name="hasta" type="date" th:value="${hasta}">
+        </div>
+        <button class="boton" type="submit">Filtrar</button>
+        <a class="boton boton--secundario" th:href="@{/estadisticas}">Ver todo</a>
+    </form>
+
+    <p class="vacio" th:if="${total == 0}">No hay objetos reportados en esas fechas.</p>
+
+    <th:block th:unless="${total == 0}">
+        <section class="seccion" aria-labelledby="titulo-estado">
+            <h2 id="titulo-estado">Por estado</h2>
+            <ul class="ranking grafico panel">
+                <li class="ranking__fila" th:each="e : ${porEstado}">
+                    <span class="ranking__nombre" th:text="${e.etiqueta()}">Reportado</span>
+                    <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${e.porcentaje()}%|"></span></span>
+                    <span class="ranking__dato" th:text="|${e.cantidad()} (${e.porcentaje()} %)|">4 (33 %)</span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-categoria">
+            <h2 id="titulo-categoria">Por categoría</h2>
+            <ul class="ranking grafico panel">
+                <li class="ranking__fila" th:each="c : ${porCategoria}">
+                    <span class="ranking__nombre" th:text="${c.categoria().etiqueta}">Tecnología</span>
+                    <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${c.porcentaje()}%|"></span></span>
+                    <span class="ranking__dato" th:text="|${c.total()} (${c.porcentaje()} %)|">5 (42 %)</span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="seccion" aria-labelledby="titulo-mes">
+            <h2 id="titulo-mes">Por mes</h2>
+            <ul class="ranking grafico panel">
+                <li class="ranking__fila" th:each="m : ${porMes}">
+                    <span class="ranking__nombre" th:text="${m.etiqueta()}">nov 2026</span>
+                    <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${m.porcentaje()}%|"></span></span>
+                    <span class="ranking__dato" th:text="|${m.cantidad()} (${m.porcentaje()} %)|">8 (67 %)</span>
+                </li>
+            </ul>
+        </section>
+    </th:block>
+</main>
+</body>
+</html>

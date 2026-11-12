@@ -1,21 +1,36 @@
 <!DOCTYPE html>
-<!-- HU-01: pantalla de inicio de sesión. La validación de credenciales la hace el backend (Spring Security). -->
+<!-- HU-01: inicio de sesión con dos accesos: usuarios (estudiantes y Seguridad) y Oficina de Objetos Perdidos.
+     La validación de credenciales y de que la cuenta corresponda al acceso la hace el backend (SeguridadConfig). -->
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos :: head('Iniciar sesión')}"></head>
 <body>
-<main class="login">
+<main class="login" th:with="oficina=${param.acceso != null and param.acceso[0] == 'oficina'}">
     <div class="login__caja">
         <div class="pagina-titulo">
             <h1 class="login__marca"><svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>U-FOUND</h1>
             <p class="texto-secundario">Objetos perdidos y encontrados del campus.</p>
         </div>
 
-        <!-- Spring Security procesa este POST. Los nombres "username" y "password" son los que espera por defecto.
-             Si las credenciales fallan vuelve aquí con ?error; al cerrar sesión, con ?logout. -->
+        <!-- Spring Security procesa este POST. Los nombres "username" y "password" son los que espera por defecto;
+             "acceso" indica desde qué acceso se entra. Si algo falla vuelve aquí con ?error. -->
         <form class="panel" th:action="@{/login}" method="post">
-            <h2>Iniciar sesión</h2>
-            <p class="aviso aviso--error" role="alert" th:if="${param.error}">Correo o contraseña incorrectos. Inténtalo de nuevo.</p>
+            <nav class="selector-acceso" aria-label="Tipo de acceso">
+                <a th:href="@{/login(acceso='usuario')}" th:attr="aria-current=${oficina} ? null : 'page'">Usuarios</a>
+                <a th:href="@{/login(acceso='oficina')}" th:attr="aria-current=${oficina} ? 'page' : null">Oficina de objetos perdidos</a>
+            </nav>
+
+            <div>
+                <h2 th:text="${oficina} ? 'Acceso de la Oficina' : 'Acceso de usuarios'">Acceso de usuarios</h2>
+                <p class="campo__ayuda" th:text="${oficina} ? 'Personal de la Oficina de Objetos Perdidos.' : 'Estudiantes y personal de Seguridad.'">Estudiantes y personal de Seguridad.</p>
+            </div>
+
+            <p th:replace="~{fragmentos :: aviso}"></p>
+            <p class="aviso aviso--error" role="alert" th:if="${param.error != null and param.error[0] == 'acceso'}"
+               th:text="${oficina} ? 'Esta cuenta no es de la Oficina. Ingresa por el acceso de Usuarios.' : 'Esta cuenta es de la Oficina. Ingresa por el acceso de la Oficina de objetos perdidos.'">Esta cuenta no corresponde a este acceso.</p>
+            <p class="aviso aviso--error" role="alert" th:if="${param.error != null and param.error[0] != 'acceso'}">Correo o contraseña incorrectos. Inténtalo de nuevo.</p>
             <p class="aviso" role="status" th:if="${param.logout}">Cerraste sesión.</p>
+
+            <input type="hidden" name="acceso" th:value="${oficina} ? 'oficina' : 'usuario'">
             <div class="campo">
                 <label for="username">Correo institucional</label>
                 <input id="username" name="username" type="email" autocomplete="username" required autofocus>
@@ -24,7 +39,10 @@
                 <label for="password">Contraseña</label>
                 <input id="password" name="password" type="password" autocomplete="current-password" required>
             </div>
-            <button class="boton" type="submit">Ingresar</button>
+            <button class="boton" type="submit" th:text="${oficina} ? 'Ingresar a la Oficina' : 'Ingresar'">Ingresar</button>
+
+            <p class="login__pie" th:unless="${oficina}">¿Aún no tienes cuenta? <a th:href="@{/registro}">Crear cuenta de estudiante</a></p>
+            <p class="login__pie" th:if="${oficina}">Las cuentas de la Oficina las crea la propia Oficina.</p>
         </form>
     </div>
 </main>

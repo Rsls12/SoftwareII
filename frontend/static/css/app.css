@@ -103,6 +103,7 @@ code { font-family: var(--font-mono); font-size: var(--fs-sm); font-variant-nume
   min-height: var(--tap-min);
   font-weight: 700;
   letter-spacing: 0.08em;
+  white-space: nowrap;
   color: var(--c-text);
   text-decoration: none;
 }
@@ -349,6 +350,8 @@ td.envolver { white-space: normal; min-width: 14rem; }
 .campo { display: grid; gap: var(--sp-2); }
 .campo label { font-size: var(--fs-sm); font-weight: 700; }
 .campo__ayuda { font-size: var(--fs-sm); color: var(--c-text-muted); }
+.vista-previa { width: 100%; max-width: 16rem; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--c-border); border-radius: var(--radius-card); }
+.vista-previa[hidden] { display: none; }
 
 input, select, textarea {
   width: 100%;
@@ -400,6 +403,10 @@ input[type="file"]::file-selector-button {
 .grupo-campos legend { padding: 0 var(--sp-2); font-size: var(--fs-sm); font-weight: 700; }
 input:disabled, select:disabled { color: var(--c-text-muted); background: var(--c-bg); border-style: dashed; }
 input:user-invalid, select:user-invalid, textarea:user-invalid { border-color: var(--c-error); }
+
+.campo__etiqueta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-2); }
+.campo--sugerido { border-color: var(--st-coincidencia-fg); background: var(--st-coincidencia-bg); }
+.campo__sugerido[hidden] { display: none; }
 
 /* Filtros de búsqueda: 2 columnas en celular, una sola fila en escritorio. */
 .filtros { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); align-items: end; }
@@ -503,6 +510,7 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
 }
 .ranking__nombre { grid-area: nombre; font-weight: 700; }
 .ranking__nombre::before { content: counter(ranking) ". "; color: var(--c-text-muted); }
+.grafico .ranking__nombre::before { content: none; }
 .ranking__dato { grid-area: dato; font-family: var(--font-mono); font-size: var(--fs-sm); text-align: right; }
 .ranking__barra {
   grid-area: barra;
@@ -533,6 +541,33 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
 .login__caja { display: grid; gap: var(--sp-6); width: 100%; max-width: 24rem; }
 .login__marca { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-2xl); letter-spacing: 0.08em; }
 .login__marca .icono { width: 2rem; height: 2rem; color: var(--c-accent); }
+
+/* Dos accesos en el mismo login: usuarios y Oficina de objetos perdidos. */
+.selector-acceso {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  background: var(--c-accent-soft);
+  border-radius: var(--radius-control);
+}
+.selector-acceso a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  text-align: center;
+  text-decoration: none;
+  color: var(--c-accent);
+  border-radius: calc(var(--radius-control) - 2px);
+}
+.selector-acceso a:hover { background: var(--c-surface); }
+.selector-acceso a[aria-current="page"] { color: var(--c-on-accent); background: var(--c-accent); }
+.login__pie { margin: 0; font-size: var(--fs-sm); color: var(--c-text-muted); text-align: center; }
 
 @media (min-width: 768px) {
   .login__caja { grid-template-columns: 1fr 1fr; gap: 0; max-width: 52rem; }
