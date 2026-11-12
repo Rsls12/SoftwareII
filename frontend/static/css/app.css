@@ -538,6 +538,33 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
 .login__marca { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-2xl); letter-spacing: 0.08em; }
 .login__marca .icono { width: 2rem; height: 2rem; color: var(--c-accent); }
 
+/* Dos accesos en el mismo login: usuarios y Oficina de objetos perdidos. */
+.selector-acceso {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+  background: var(--c-accent-soft);
+  border-radius: var(--radius-control);
+}
+.selector-acceso a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap-min);
+  padding: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  text-align: center;
+  text-decoration: none;
+  color: var(--c-accent);
+  border-radius: calc(var(--radius-control) - 2px);
+}
+.selector-acceso a:hover { background: var(--c-surface); }
+.selector-acceso a[aria-current="page"] { color: var(--c-on-accent); background: var(--c-accent); }
+.login__pie { margin: 0; font-size: var(--fs-sm); color: var(--c-text-muted); text-align: center; }
+
 @media (min-width: 768px) {
   .login__caja { grid-template-columns: 1fr 1fr; gap: 0; max-width: 52rem; }
 

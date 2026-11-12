@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- Crear cuenta de estudiante desde el acceso de usuarios. Siempre crea el rol Estudiante (Usuario.registrarEstudiante). -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Crear cuenta')}"></head>
+<body>
+<main class="login">
+    <div class="login__caja">
+        <div class="pagina-titulo">
+            <h1 class="login__marca"><svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>U-FOUND</h1>
+            <p class="texto-secundario">Crea tu cuenta para reportar tus objetos perdidos y recibir avisos cuando aparezcan.</p>
+        </div>
+
+        <form class="panel" th:action="@{/registro}" method="post">
+            <div>
+                <h2>Crear cuenta de estudiante</h2>
+                <p class="campo__ayuda">Con tu correo de la Universidad de Lima.</p>
+            </div>
+
+            <p class="aviso aviso--error" role="alert" th:if="${error}" th:text="${error}">Las contraseñas no coinciden.</p>
+
+            <div class="campo">
+                <label for="nombres">Nombres</label>
+                <input id="nombres" name="nombres" maxlength="100" autocomplete="given-name" required autofocus th:value="${nombres}">
+            </div>
+            <div class="campo">
+                <label for="apellidos">Apellidos</label>
+                <input id="apellidos" name="apellidos" maxlength="100" autocomplete="family-name" required th:value="${apellidos}">
+            </div>
+            <div class="campo">
+                <label for="correo">Correo institucional</label>
+                <input id="correo" name="correo" type="email" maxlength="150" autocomplete="email" required
+                       placeholder="20231234@aloe.ulima.edu.pe" th:value="${correo}">
+            </div>
+            <div class="campo">
+                <label for="contrasena">Contraseña</label>
+                <input id="contrasena" name="contrasena" type="password" minlength="8" maxlength="72"
+                       autocomplete="new-password" required aria-describedby="ayuda-contrasena">
+                <small id="ayuda-contrasena" class="campo__ayuda">Mínimo 8 caracteres.</small>
+            </div>
+            <div class="campo">
+                <label for="confirmacion">Repite la contraseña</label>
+                <input id="confirmacion" name="confirmacion" type="password" minlength="8" maxlength="72"
+                       autocomplete="new-password" required>
+            </div>
+            <button class="boton" type="submit">Crear cuenta</button>
+
+            <p class="login__pie">¿Ya tienes cuenta? <a th:href="@{/login(acceso='usuario')}">Inicia sesión</a></p>
+        </form>
+    </div>
+</main>
+</body>
+</html>

@@ -2,8 +2,10 @@ package pe.edu.ufound.web;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.server.ResponseStatusException;
@@ -47,21 +49,25 @@ public class RutasWeb {
     private final NotificacionRepository notificaciones;
     private final UsuarioRepository usuarios;
     private final AlmacenamientoImagenes imagenes;
+    private final PasswordEncoder cifrador;
 
     public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias,
                     NotificacionRepository notificaciones, UsuarioRepository usuarios,
-                    AlmacenamientoImagenes imagenes) {
+                    AlmacenamientoImagenes imagenes, PasswordEncoder cifrador) {
         this.objetos = objetos;
         this.coincidencias = coincidencias;
         this.notificaciones = notificaciones;
         this.usuarios = usuarios;
         this.imagenes = imagenes;
+        this.cifrador = cifrador;
     }
 
     @Bean
     public RouterFunction<ServerResponse> rutas() {
         return route()
                 .GET("/login", this::login)
+                .GET("/registro", this::formularioRegistro)
+                .POST("/registro", this::registrarCuenta)
                 .GET("/", this::inicio)
                 .GET("/objetos/nuevo", this::nuevo)
                 .POST("/objetos", this::registrar)
@@ -87,7 +93,50 @@ public class RutasWeb {
 
     private ServerResponse login(ServerRequest peticion) {
         // Quien ya inició sesión no necesita ver el formulario otra vez.
-        return peticion.principal().isPresent() ? redirigir(peticion, "/", null) : ServerResponse.ok().render("login");
+        return peticion.principal().isPresent() ? redirigir(peticion, "/", null)
+                : ServerResponse.ok().render("login", modelo(peticion, null));
+    }
+
+    // ---------- Crear cuenta de estudiante desde el acceso de usuarios ----------
+
+    private static final Map<String, String> MENSAJES_REGISTRO = Map.of(
+            "nombres", "Escribe tus nombres (hasta 100 caracteres).",
+            "apellidos", "Escribe tus apellidos (hasta 100 caracteres).",
+            "correo", "Usa tu correo institucional de la Universidad de Lima, por ejemplo 20231234@aloe.ulima.edu.pe.",
+            "correoExistente", "Ya existe una cuenta con ese correo. Inicia sesión o usa otro correo.",
+            "contrasena", "La contraseña debe tener entre 8 y 72 caracteres.",
+            "confirmacion", "Las contraseñas no coinciden.");
+
+    private ServerResponse formularioRegistro(ServerRequest peticion) {
+        return peticion.principal().isPresent() ? redirigir(peticion, "/", null)
+                : ServerResponse.ok().render("registro", new HashMap<String, Object>());
+    }
+
+    private ServerResponse registrarCuenta(ServerRequest peticion) {
+        String correo = texto(peticion, "correo");
+        try {
+            if (correo != null && usuarios.existsByCorreoIgnoreCase(correo.trim())) {
+                throw new DatosInvalidosException("correoExistente");
+            }
+            usuarios.save(Usuario.registrarEstudiante(texto(peticion, "nombres"), texto(peticion, "apellidos"),
+                    correo, texto(peticion, "contrasena"), texto(peticion, "confirmacion"), cifrador::encode));
+        } catch (DatosInvalidosException e) {
+            return registroConError(peticion, e.getCampo());
+        } catch (DataIntegrityViolationException e) {
+            // Otra persona registró el mismo correo un instante antes (correo es único en la tabla usuario).
+            return registroConError(peticion, "correoExistente");
+        }
+        return redirigir(peticion, "/login", "Tu cuenta quedó creada. Ya puedes iniciar sesión.");
+    }
+
+    // Vuelve a mostrar el formulario con el error y lo ya escrito, menos las contraseñas.
+    private ServerResponse registroConError(ServerRequest peticion, String campo) {
+        Map<String, Object> modelo = new HashMap<>();
+        modelo.put("error", MENSAJES_REGISTRO.getOrDefault(campo, "Revisa los datos del formulario."));
+        modelo.put("nombres", texto(peticion, "nombres"));
+        modelo.put("apellidos", texto(peticion, "apellidos"));
+        modelo.put("correo", texto(peticion, "correo"));
+        return ServerResponse.status(HttpStatus.BAD_REQUEST).render("registro", modelo);
     }
 
     // ---------- Inicio según rol (HU-03) y objetos recientes (HU-19) ----------
