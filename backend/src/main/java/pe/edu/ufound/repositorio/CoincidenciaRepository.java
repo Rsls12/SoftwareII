@@ -11,8 +11,9 @@ public interface CoincidenciaRepository extends JpaRepository<Coincidencia, Long
     // HU-23: las coincidencias de un objeto, sea el perdido o el encontrado, de la más parecida a la menos.
     List<Coincidencia> findByObjetoPerdidoOrObjetoEncontradoOrderByPuntajeDesc(Objeto perdido, Objeto encontrado);
 
+    // HU-36: priorizadas con la regla del modelo (Coincidencia.compareTo), que además desempata las de igual puntaje.
     default List<Coincidencia> de(Objeto objeto) {
-        return findByObjetoPerdidoOrObjetoEncontradoOrderByPuntajeDesc(objeto, objeto);
+        return Coincidencia.priorizar(findByObjetoPerdidoOrObjetoEncontradoOrderByPuntajeDesc(objeto, objeto));
     }
 
     // HU-24: todas las coincidencias, de la más parecida a la menos, para que la Oficina priorice su validación.

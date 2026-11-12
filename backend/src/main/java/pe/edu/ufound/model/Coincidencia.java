@@ -11,11 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** HU-23: un objeto perdido y uno encontrado que podrían ser el mismo. La crea Objeto.detectarCoincidencias. */
 @Entity
 @Table(name = "coincidencia")
-public class Coincidencia {
+public class Coincidencia implements Comparable<Coincidencia> {
 
     // Misma categoría y al menos otra pista fuerte (lugar, fecha cercana o palabras en común).
     public static final int PUNTAJE_MINIMO = 60;
@@ -66,6 +69,28 @@ public class Coincidencia {
             return NivelCoincidencia.MEDIO;
         }
         return NivelCoincidencia.BAJO;
+    }
+
+    // HU-36: las coincidencias de la más relevante a la menos, sin modificar la lista recibida.
+    public static List<Coincidencia> priorizar(List<Coincidencia> coincidencias) {
+        List<Coincidencia> priorizadas = new ArrayList<>(coincidencias);
+        Collections.sort(priorizadas);
+        return priorizadas;
+    }
+
+    // HU-36: va primero la de mayor puntaje, que es también la de mayor nivel (HU-24): una ALTA antes que una
+    // MEDIA y una MEDIA antes que una BAJA. A igual puntaje, va primero la detectada más recientemente, y si aun
+    // así empatan, la registrada después; así el orden nunca depende de cómo las devuelva la base de datos.
+    @Override
+    public int compareTo(Coincidencia otra) {
+        if (puntaje != otra.puntaje) {
+            return Integer.compare(otra.puntaje, puntaje);
+        }
+        int porFecha = otra.fechaHoraDeteccion.compareTo(fechaHoraDeteccion);
+        if (porFecha != 0 || idCoincidencia == null || otra.idCoincidencia == null) {
+            return porFecha;
+        }
+        return otra.idCoincidencia.compareTo(idCoincidencia);
     }
 
     public Long getIdCoincidencia() { return idCoincidencia; }

@@ -162,6 +162,10 @@
         <div class="seccion__cabecera">
             <h2 id="titulo-coincidencias">Posibles coincidencias</h2>
         </div>
+        <!-- HU-36: la lista llega priorizada (Coincidencia.priorizar): primero las de mayor nivel de similitud. -->
+        <p class="texto-secundario" th:if="${coincidencias.size() > 1}">
+            Ordenadas de la más parecida a la menos: revisa primero las de nivel Alta.
+        </p>
 
         <ul class="tarjetas" th:unless="${coincidencias.isEmpty()}">
             <li th:each="c : ${coincidencias}">
