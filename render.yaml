@@ -24,6 +24,6 @@ services:
         sync: false
       - key: SUPABASE_BUCKET
         value: objetos
-      # HU-33: opcional; sin ella no se analizan las fotos con IA.
-      - key: ANTHROPIC_API_KEY
+      # HU-33: opcional; sin ella no se analizan las fotos con Gemini.
+      - key: GEMINI_API_KEY
         sync: false

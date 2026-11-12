@@ -65,6 +65,60 @@ class CaracteristicasObjetoTest {
         assertTrue(caracteristicas.getMarca().endsWith("…"));
     }
 
+    // ---------- Sugerencias para el formulario (HU-33 + HU-35) ----------
+
+    @Test
+    void sugiereLosDatosDelFormularioConTodoLoReconocido() {
+        CaracteristicasObjeto lentes = new CaracteristicasObjeto("Lentes", List.of("Negro", "Rosado"), null, "Plástico",
+                List.of("Montura rectangular de marco grueso", "Línea rosada en las patillas."), AHORA);
+
+        assertEquals("Lentes negro", lentes.sugerirNombre());
+        assertEquals("Lentes, de color negro, rosado, de plástico. Montura rectangular de marco grueso; "
+                + "Línea rosada en las patillas.", lentes.sugerirDescripcion());
+        assertEquals(CategoriaObjeto.ACCESORIOS, lentes.sugerirCategoria());
+    }
+
+    @Test
+    void siLaIaRespondeEnMinusculasElNombreYLasOracionesEmpiezanConMayuscula() {
+        CaracteristicasObjeto lentes = new CaracteristicasObjeto("lentes", List.of("negro", "rojo"), null, "plástico",
+                List.of("marco rectangular", "patillas con una línea roja"), AHORA);
+
+        assertEquals("Lentes", lentes.getObjetoDetectado());
+        assertEquals("Lentes negro", lentes.sugerirNombre());
+        assertEquals("Lentes, de color negro, rojo, de plástico. Marco rectangular; patillas con una línea roja.",
+                lentes.sugerirDescripcion());
+    }
+
+    @Test
+    void laMarcaVaEnElNombreYEnLaDescripcion() {
+        CaracteristicasObjeto mouse = new CaracteristicasObjeto("Mouse inalámbrico", List.of("negro"), "Logitech",
+                null, null, AHORA);
+
+        assertEquals("Mouse inalámbrico Logitech negro", mouse.sugerirNombre());
+        assertEquals("Mouse inalámbrico marca Logitech, de color negro.", mouse.sugerirDescripcion());
+        assertEquals(CategoriaObjeto.TECNOLOGIA, mouse.sugerirCategoria());
+    }
+
+    @Test
+    void laCategoriaSeReconoceAunqueElNombreLleveTildes() {
+        assertEquals(CategoriaObjeto.TECNOLOGIA, conObjeto("Audífonos").sugerirCategoria());
+        assertEquals(CategoriaObjeto.DOCUMENTOS, conObjeto("Carné universitario").sugerirCategoria());
+        assertEquals(CategoriaObjeto.OTROS, conObjeto("Peluche").sugerirCategoria());
+    }
+
+    @Test
+    void lasSugerenciasRespetanLosLimitesDelFormulario() {
+        // Una descripción muy corta se completa hasta el mínimo; un nombre largo se corta al máximo.
+        assertTrue(conObjeto("Gorra").sugerirDescripcion().length() >= Objeto.DESCRIPCION_MINIMA);
+        CaracteristicasObjeto largo = new CaracteristicasObjeto("o".repeat(70), List.of("verde"),
+                "m".repeat(40), null, null, AHORA);
+        assertEquals(Objeto.NOMBRE_MAXIMO, largo.sugerirNombre().length());
+    }
+
+    private static CaracteristicasObjeto conObjeto(String objeto) {
+        return new CaracteristicasObjeto(objeto, null, null, null, null, AHORA);
+    }
+
     @Test
     void unTextoJustoEnElLimiteNoSeRecorta() {
         String marca = "m".repeat(CaracteristicasObjeto.MARCA_MAXIMA);

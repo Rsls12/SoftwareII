@@ -90,7 +90,10 @@
                 JPG, PNG, GIF o WEBP, máximo 5 MB.
             </p>
             <!-- HU-33 -->
-            <p class="campo__ayuda">Con la foto, la IA reconoce sus características (colores, marca, material) y las agrega al reporte.</p>
+            <p class="campo__ayuda" th:text="${editando} ? 'Con la foto, la IA reconoce sus características (colores, marca, material) y las agrega al reporte.' : 'Al elegir la foto, la IA la analiza y completa el nombre, la categoría y la descripción. Revísalos antes de registrar.'">
+                Con la foto, la IA reconoce sus características y las agrega al reporte.
+            </p>
+            <p id="estado-ia" class="campo__ayuda" role="status" aria-live="polite" hidden></p>
             <img id="vista-previa" class="vista-previa" alt="Vista previa de la foto"
                  th:src="${editando} ? ${objeto.imagenUrl}" th:hidden="${!editando or objeto.imagenUrl == null}">
         </div>
@@ -155,27 +158,67 @@
             limpiarAlEditar(campoCategoria, 'badge-categoria');
             limpiarAlEditar(campoDescripcion, 'badge-descripcion');
 
+            // Se llena un campo vacío o uno que todavía tiene una sugerencia (si se cambia de foto);
+            // lo que la persona ya escribió no se toca.
+            function sePuedeSugerir(campo) {
+                return !campo.value.trim() || campo.classList.contains('campo--sugerido');
+            }
+
             window.autocompletarFormularioObjeto = function (datos) {
-                if (datos.nombre && !campoNombre.value.trim()) {
+                if (datos.nombre && sePuedeSugerir(campoNombre)) {
                     marcarSugerido(campoNombre, 'badge-nombre', datos.nombre);
                 }
-                if (datos.categoria && !campoCategoria.value) {
+                if (datos.categoria && sePuedeSugerir(campoCategoria)) {
                     marcarSugerido(campoCategoria, 'badge-categoria', datos.categoria);
                 }
-                if (datos.descripcion && !campoDescripcion.value.trim()) {
+                if (datos.descripcion && sePuedeSugerir(campoDescripcion)) {
                     marcarSugerido(campoDescripcion, 'badge-descripcion', datos.descripcion);
                 }
             };
 
-            inputFoto.addEventListener('change', function () {
-                var archivo = this.files[0];
-                if (!archivo || archivo.size > 5 * 1024 * 1024) return;
+            function sugerirPorNombreDeArchivo(archivo) {
                 var base = archivo.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim();
                 fetch('/api/autocompletar?tipo=' + encodeURIComponent(base))
                     .then(function (res) { return res.ok ? res.json() : null; })
                     .then(function (sugerencia) {
                         if (sugerencia) {
                             window.autocompletarFormularioObjeto(sugerencia);
+                        }
+                    });
+            }
+
+            // HU-33: la IA analiza la foto apenas se elige y sugiere los datos del formulario.
+            var estadoIa = document.getElementById('estado-ia');
+            var tokenCsrf = inputFoto.form.querySelector('input[name="_csrf"]');
+            var consulta = 0;
+
+            function mostrarEstado(texto) {
+                estadoIa.textContent = texto;
+                estadoIa.hidden = !texto;
+            }
+
+            inputFoto.addEventListener('change', function () {
+                var archivo = this.files[0];
+                if (!archivo || inputFoto.validationMessage) {
+                    mostrarEstado('');
+                    return;
+                }
+                var numero = ++consulta;
+                var datos = new FormData();
+                datos.append('foto', archivo);
+                if (tokenCsrf) datos.append('_csrf', tokenCsrf.value);
+                mostrarEstado('Analizando la foto con IA… puede tardar unos segundos.');
+                fetch('/api/analizar-foto', { method: 'POST', body: datos })
+                    .then(function (res) { return res.status === 200 ? res.json() : null; })
+                    .catch(function () { return null; })
+                    .then(function (sugerencia) {
+                        if (numero !== consulta) return; // se eligió otra foto mientras tanto
+                        if (sugerencia) {
+                            window.autocompletarFormularioObjeto(sugerencia);
+                            mostrarEstado('Listo: completamos los datos con lo que se ve en la foto. Revísalos antes de registrar.');
+                        } else {
+                            mostrarEstado('No se pudo analizar la foto con IA. Completa o corrige los datos tú mismo.');
+                            sugerirPorNombreDeArchivo(archivo);
                         }
                     });
             });

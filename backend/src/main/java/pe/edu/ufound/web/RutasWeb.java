@@ -97,6 +97,7 @@ public class RutasWeb {
                 .GET("/estadisticas", this::estadisticas)
                 .GET("/api/categorias", this::categorias)
                 .GET("/api/autocompletar", this::autocompletar)
+                .POST("/api/analizar-foto", this::analizarFoto)
                 .build();
     }
 
@@ -402,6 +403,22 @@ public class RutasWeb {
                 "nombre", nombreSugerido,
                 "descripcion", descripcionSugerida,
                 "categoria", categoriaSugerida.name()
+        ));
+    }
+
+    // HU-33 + HU-35: al elegir la foto en el formulario, la IA la analiza y sugiere nombre, categoría y
+    // descripción, con las mismas claves que /api/autocompletar. Si no hay análisis (sin clave, GIF o la IA no
+    // reconoce nada) responde 204 y el formulario usa el autocompletado por nombre de archivo, como antes.
+    private ServerResponse analizarFoto(ServerRequest peticion) {
+        Optional<CaracteristicasObjeto> reconocidas = reconocimiento.analizar(foto(peticion));
+        if (reconocidas.isEmpty()) {
+            return ServerResponse.noContent().build();
+        }
+        CaracteristicasObjeto caracteristicas = reconocidas.get();
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of(
+                "nombre", caracteristicas.sugerirNombre(),
+                "descripcion", caracteristicas.sugerirDescripcion(),
+                "categoria", caracteristicas.sugerirCategoria().name()
         ));
     }
 

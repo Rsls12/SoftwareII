@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 
+import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -53,12 +54,66 @@ public class CaracteristicasObjeto {
         if (fechaHoraAnalisis == null) {
             throw new DatosInvalidosException("fechaHoraAnalisis");
         }
-        this.objetoDetectado = objeto;
+        this.objetoDetectado = conMayuscula(objeto);
         this.colores = limpiar(unir(colores, ", "), COLORES_MAXIMO);
         this.marca = limpiar(marca, MARCA_MAXIMA);
         this.material = limpiar(material, MATERIAL_MAXIMO);
         this.rasgosDistintivos = limpiar(unir(rasgosDistintivos, "; "), RASGOS_MAXIMO);
         this.fechaHoraAnalisis = fechaHoraAnalisis;
+    }
+
+    // ---------- HU-33 + HU-35: valores que se sugieren en el formulario de registro ----------
+
+    /** Ej.: "Mouse inalámbrico Logitech negro". Usa la misma regla que el autocompletado (Objeto.sugerirNombre). */
+    public String sugerirNombre() {
+        String nombre = Objeto.sugerirNombre(objetoDetectado, marca, primerColor());
+        return nombre.length() <= Objeto.NOMBRE_MAXIMO ? nombre : nombre.substring(0, Objeto.NOMBRE_MAXIMO).trim();
+    }
+
+    /** Ej.: "Lentes, de color negro, rosado, de plástico. Montura rectangular de marco grueso." */
+    public String sugerirDescripcion() {
+        StringBuilder descripcion = new StringBuilder(objetoDetectado);
+        if (marca != null) {
+            descripcion.append(" marca ").append(marca);
+        }
+        if (colores != null) {
+            descripcion.append(", de color ").append(colores.toLowerCase());
+        }
+        if (material != null) {
+            descripcion.append(", de ").append(material.toLowerCase());
+        }
+        descripcion.append(".");
+        if (rasgosDistintivos != null) {
+            descripcion.append(" ").append(conMayuscula(sinPuntoFinal(rasgosDistintivos))).append(".");
+        }
+        if (descripcion.length() < Objeto.DESCRIPCION_MINIMA) {
+            descripcion.append(" Reconocido en la foto.");
+        }
+        return limpiar(descripcion.toString(), Objeto.DESCRIPCION_MAXIMA);
+    }
+
+    /** La categoría según qué objeto es, con la misma regla que el autocompletado (Objeto.sugerirCategoria). */
+    public CategoriaObjeto sugerirCategoria() {
+        // La regla compara palabras sin tildes ("audifono"): se le pasa el nombre sin tildes.
+        String sinTildes = Normalizer.normalize(objetoDetectado, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return Objeto.sugerirCategoria(sinTildes);
+    }
+
+    private String primerColor() {
+        if (colores == null) {
+            return null;
+        }
+        int coma = colores.indexOf(',');
+        return coma < 0 ? colores : colores.substring(0, coma);
+    }
+
+    // Algunos modelos responden todo en minúsculas ("lentes"): el nombre y cada oración empiezan con mayúscula.
+    private static String conMayuscula(String texto) {
+        return texto.substring(0, 1).toUpperCase() + texto.substring(1);
+    }
+
+    private static String sinPuntoFinal(String texto) {
+        return texto.endsWith(".") ? texto.substring(0, texto.length() - 1) : texto;
     }
 
     public boolean tieneColores() { return colores != null; }

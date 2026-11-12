@@ -48,6 +48,7 @@ class ReconocimientoFotoTest {
 
     private static final String ESTUDIANTE = "ana.torres@universidad.edu.pe";
     private static final String SEGURIDAD = "jorge.quispe@universidad.edu.pe";
+    private static final String OFICINA = "lucia.paredes@universidad.edu.pe";
     private static final byte[] PNG = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D};
 
     private static final SupabaseFalso supabase = new SupabaseFalso();
@@ -229,10 +230,60 @@ class ReconocimientoFotoTest {
 
     @Test
     @WithUserDetails(ESTUDIANTE)
-    void elFormularioAvisaQueLaFotoSeAnalizaConIa() throws Exception {
+    void elFormularioAvisaQueLaFotoSeAnalizaConIaAlElegirla() throws Exception {
         mvc.perform(get("/objetos/nuevo"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("la IA reconoce sus características")));
+                .andExpect(content().string(containsString("Al elegir la foto, la IA la analiza")))
+                .andExpect(content().string(containsString("/api/analizar-foto")))
+                .andExpect(content().string(containsString("id=\"estado-ia\"")));
+    }
+
+    // ---------- Al elegir la foto, la IA sugiere los datos del formulario (HU-33 + HU-35) ----------
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void alElegirLaFotoLaIaSugiereNombreCategoriaYDescripcion() throws Exception {
+        when(reconocimiento.analizar(any())).thenReturn(Optional.of(new CaracteristicasObjeto("Lentes",
+                List.of("Negro", "Rosado"), null, "Plástico", List.of("Montura rectangular"), LocalDateTime.now())));
+        long antes = objetos.count();
+
+        mvc.perform(multipart("/api/analizar-foto").file(foto()).with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Lentes negro"))
+                .andExpect(jsonPath("$.categoria").value("ACCESORIOS"))
+                .andExpect(jsonPath("$.descripcion").value(
+                        "Lentes, de color negro, rosado, de plástico. Montura rectangular."));
+
+        verify(reconocimiento, times(1)).analizar(any());
+        // Solo sugiere: no registra nada.
+        assertEquals(antes, objetos.count());
+    }
+
+    @Test
+    @WithUserDetails(SEGURIDAD)
+    void siLaIaNoReconoceLaFotoNoHaySugerencias() throws Exception {
+        when(reconocimiento.analizar(any())).thenReturn(Optional.empty());
+
+        mvc.perform(multipart("/api/analizar-foto").file(foto()).with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithUserDetails(OFICINA)
+    void laOficinaNoAnalizaFotosPorqueNoRegistraObjetos() throws Exception {
+        mvc.perform(multipart("/api/analizar-foto").file(foto()).with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(reconocimiento, never()).analizar(any());
+    }
+
+    @Test
+    @WithUserDetails(ESTUDIANTE)
+    void sinElTokenCsrfNoSeAnaliza() throws Exception {
+        mvc.perform(multipart("/api/analizar-foto").file(foto()))
+                .andExpect(status().isForbidden());
+
+        verify(reconocimiento, never()).analizar(any());
     }
 
     private Objeto ultimoReporteDe(String correo) {
