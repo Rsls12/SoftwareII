@@ -536,6 +536,38 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
   .indicadores { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* ---------- Chatbot ---------- */
+.chatbot {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: calc(84px + env(safe-area-inset-bottom)); /* sobre la barra del celular */
+  z-index: 20;
+  display: grid;
+  justify-items: end;
+  gap: var(--sp-3);
+}
+.chatbot__abrir { border-radius: var(--radius-pill); box-shadow: var(--shadow-card); }
+.chatbot__ventana { width: min(22rem, calc(100vw - 2 * var(--sp-4))); padding: var(--sp-4); gap: var(--sp-3); }
+.chatbot__ventana[hidden] { display: none; }
+.chatbot__cabecera { display: flex; justify-content: space-between; align-items: center; }
+.chatbot__cabecera h2 { font-size: var(--fs-lg); }
+.chatbot__mensajes { display: grid; gap: var(--sp-2); max-height: 18rem; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.chatbot__mensaje {
+  justify-self: start;
+  max-width: 85%;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  background: var(--c-bg);
+  border-radius: var(--radius-card);
+}
+.chatbot__mensaje--yo { justify-self: end; color: var(--c-on-accent); background: var(--c-accent); }
+.chatbot__formulario { display: flex; gap: var(--sp-2); }
+.chatbot__formulario input { flex: 1; min-width: 0; }
+
+@media (min-width: 1024px) {
+  .chatbot { right: var(--sp-8); bottom: var(--sp-8); }
+}
+
 /* ---------- Notificaciones (HU-26) ---------- */
 .notificaciones { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
 .notificacion { display: grid; gap: var(--sp-2); }

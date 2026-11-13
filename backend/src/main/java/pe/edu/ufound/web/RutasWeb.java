@@ -15,6 +15,7 @@ import org.springframework.web.servlet.function.ServerResponse;
 import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.util.WebUtils;
 import pe.edu.ufound.almacenamiento.AlmacenamientoImagenes;
+import pe.edu.ufound.chatbot.ChatbotGemini;
 import pe.edu.ufound.excepcion.DatosInvalidosException;
 import pe.edu.ufound.excepcion.OperacionNoPermitidaException;
 import pe.edu.ufound.model.CaracteristicasObjeto;
@@ -59,11 +60,12 @@ public class RutasWeb {
     private final AlmacenamientoImagenes imagenes;
     private final PasswordEncoder cifrador;
     private final ReconocimientoImagenes reconocimiento;
+    private final ChatbotGemini chatbot;
 
     public RutasWeb(ObjetoRepository objetos, CoincidenciaRepository coincidencias,
                     NotificacionRepository notificaciones, UsuarioRepository usuarios,
                     AlmacenamientoImagenes imagenes, PasswordEncoder cifrador,
-                    ReconocimientoImagenes reconocimiento) {
+                    ReconocimientoImagenes reconocimiento, ChatbotGemini chatbot) {
         this.objetos = objetos;
         this.coincidencias = coincidencias;
         this.notificaciones = notificaciones;
@@ -71,6 +73,7 @@ public class RutasWeb {
         this.imagenes = imagenes;
         this.cifrador = cifrador;
         this.reconocimiento = reconocimiento;
+        this.chatbot = chatbot;
     }
 
     @Bean
@@ -100,6 +103,7 @@ public class RutasWeb {
                 .GET("/api/categorias", this::categorias)
                 .GET("/api/autocompletar", this::autocompletar)
                 .POST("/api/analizar-foto", this::analizarFoto)
+                .POST("/api/chatbot", this::chatbot)
                 .build();
     }
 
@@ -440,6 +444,13 @@ public class RutasWeb {
                 "descripcion", caracteristicas.sugerirDescripcion(),
                 "categoria", caracteristicas.sugerirCategoria().name()
         ));
+    }
+
+    // ---------- Chatbot ----------
+
+    private ServerResponse chatbot(ServerRequest peticion) {
+        String respuesta = chatbot.responder(texto(peticion, "pregunta"));
+        return ServerResponse.ok().contentType(MediaType.APPLICATION_JSON).body(Map.of("respuesta", respuesta));
     }
 
     // ---------- Lectura de la petición ----------

@@ -57,7 +57,76 @@
     <form class="barra__salir" th:action="@{/logout}" method="post">
         <button class="boton-enlace" type="submit">Cerrar sesión</button>
     </form>
+
+    <th:block th:if="${yo.esEstudiante()}">
+        <div th:replace="~{fragmentos :: chatbot}"></div>
+    </th:block>
 </header>
+
+<!-- Chatbot (solo estudiantes). -->
+<div th:fragment="chatbot" class="chatbot">
+    <section id="chatbot-ventana" class="chatbot__ventana panel" aria-label="Asistente de U-FOUND" hidden>
+        <div class="chatbot__cabecera">
+            <h2>Asistente</h2>
+            <button id="chatbot-cerrar" class="boton-enlace" type="button">Cerrar</button>
+        </div>
+        <ul id="chatbot-mensajes" class="chatbot__mensajes" aria-live="polite">
+            <li class="chatbot__mensaje">Hola, ¿en qué te ayudo? Puedes preguntarme qué hacer si perdiste algo o dónde está la Oficina.</li>
+        </ul>
+        <form id="chatbot-formulario" class="chatbot__formulario" th:action="@{/api/chatbot}" method="post">
+            <input id="chatbot-pregunta" name="pregunta" type="text" maxlength="300" autocomplete="off"
+                   aria-label="Tu pregunta" placeholder="Escribe tu pregunta">
+            <button class="boton" type="submit">Enviar</button>
+        </form>
+    </section>
+    <button id="chatbot-abrir" class="chatbot__abrir boton" type="button" aria-expanded="false" aria-controls="chatbot-ventana">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Ayuda
+    </button>
+
+    <script>
+        (function () {
+            var ventana = document.getElementById('chatbot-ventana');
+            var abrir = document.getElementById('chatbot-abrir');
+            var formulario = document.getElementById('chatbot-formulario');
+            var campo = document.getElementById('chatbot-pregunta');
+            var mensajes = document.getElementById('chatbot-mensajes');
+
+            function mostrar(visible) {
+                ventana.hidden = !visible;
+                abrir.setAttribute('aria-expanded', String(visible));
+                if (visible) campo.focus();
+            }
+
+            function agregarMensaje(texto, deEstudiante) {
+                var mensaje = document.createElement('li');
+                mensaje.className = deEstudiante ? 'chatbot__mensaje chatbot__mensaje--yo' : 'chatbot__mensaje';
+                mensaje.textContent = texto;
+                mensajes.appendChild(mensaje);
+                mensajes.scrollTop = mensajes.scrollHeight;
+                return mensaje;
+            }
+
+            abrir.addEventListener('click', function () { mostrar(ventana.hidden); });
+            document.getElementById('chatbot-cerrar').addEventListener('click', function () { mostrar(false); });
+
+            formulario.addEventListener('submit', function (evento) {
+                evento.preventDefault();
+                var pregunta = campo.value.trim();
+                if (!pregunta) return;
+                var datos = new URLSearchParams(new FormData(formulario));
+                agregarMensaje(pregunta, true);
+                campo.value = '';
+                var respuesta = agregarMensaje('Escribiendo…', false);
+                fetch(formulario.action, { method: 'POST', body: datos })
+                    .then(function (res) { return res.json(); })
+                    .then(function (json) { respuesta.textContent = json.respuesta; })
+                    .catch(function () {
+                        respuesta.textContent = 'Ahora no puedo responder. Acércate a la Oficina: Pabellón A1, piso 2, de 8:00 a. m. a 6:00 p. m.';
+                    });
+            });
+        })();
+    </script>
+</div>
 
 <!-- Mensaje de confirmación después de guardar algo. -->
 <p th:fragment="aviso" th:if="${mensaje}" class="aviso" role="status" th:text="${mensaje}">Mensaje</p>

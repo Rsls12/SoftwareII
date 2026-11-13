@@ -38,6 +38,7 @@ public class SeguridadConfig {
                         .requestMatchers("/entregas", "/coincidencias", "/estadisticas", "/dashboard").hasRole(oficina)
                         .requestMatchers("/mis-publicaciones", "/notificaciones").hasRole(estudiante)
                         .requestMatchers(HttpMethod.POST, "/notificaciones/*/leida").hasRole(estudiante)
+                        .requestMatchers(HttpMethod.POST, "/api/chatbot").hasRole(estudiante)
                         .requestMatchers(HttpMethod.POST, "/objetos/*/estado").hasRole(oficina)
                         .requestMatchers("/objetos/nuevo").hasAnyRole(estudiante, seguridad)
                         .requestMatchers(HttpMethod.POST, "/objetos").hasAnyRole(estudiante, seguridad)
