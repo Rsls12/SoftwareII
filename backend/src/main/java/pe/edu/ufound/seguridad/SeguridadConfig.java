@@ -41,6 +41,8 @@ public class SeguridadConfig {
                         .requestMatchers(HttpMethod.POST, "/objetos/*/estado").hasRole(oficina)
                         .requestMatchers("/objetos/nuevo").hasAnyRole(estudiante, seguridad)
                         .requestMatchers(HttpMethod.POST, "/objetos").hasAnyRole(estudiante, seguridad)
+                        // HU-33: analizar la foto solo sirve a quien está registrando un objeto.
+                        .requestMatchers(HttpMethod.POST, "/api/analizar-foto").hasAnyRole(estudiante, seguridad)
                         .anyRequest().authenticated())
                 // HU-01: siempre lleva al inicio, que se arma según el rol (HU-03). El login tiene dos accesos
                 // (usuarios y Oficina) y cada uno solo deja entrar a sus roles.

@@ -30,6 +30,7 @@ Se despliega en Render con Docker (`Dockerfile` + `render.yaml`). Pasos en [DESP
 | `model/` | Los objetos del sistema y sus reglas: `Usuario`, `Objeto`, `HistorialEstado`, `Entrega` y los enums. Aquí está toda la lógica de negocio |
 | `repositorio/` | Interfaces Spring Data JPA que guardan y buscan los objetos en Supabase (PostgreSQL) |
 | `almacenamiento/` | `AlmacenamientoImagenes` (interfaz) y `AlmacenamientoSupabase`, que sube las fotos a Supabase Storage |
+| `reconocimiento/` | HU-33: `ReconocimientoImagenes` (interfaz) y `ReconocimientoGemini`, que analiza la foto con Gemini (plan gratuito de Google AI Studio). `RespuestaGemini` convierte su respuesta JSON en las `CaracteristicasObjeto` (qué es, colores, marca, material, rasgos). Se activa con `GEMINI_API_KEY`; sin ella la app funciona igual |
 | `seguridad/SeguridadConfig` | Spring Security: login con el hash BCrypt de cada usuario, logout y rutas por rol |
 | `web/RutasWeb` | Entrada HTTP: une cada ruta con el objeto que la atiende y con su vista. No tiene reglas de negocio |
 | `src/main/resources/application.properties` | Configuración de la aplicación |

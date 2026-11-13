@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!-- HU-12: detalle. HU-13: estado. HU-14: cambiar estado (Oficina). HU-15: historial (Oficina).
-     HU-20 / HU-21: eliminar / editar (dueño del reporte). HU-22: datos de la entrega (Oficina). -->
+     HU-20 / HU-21: eliminar / editar (dueño del reporte). HU-22: datos de la entrega (Oficina).
+     HU-33: características que la IA reconoció en la foto. -->
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragmentos :: head(${objeto.nombre})}"></head>
 <body class="app">
@@ -48,6 +49,33 @@
             </p>
         </div>
     </div>
+
+    <!-- HU-33: lo que la IA reconoció en la foto. Ayuda a cualquiera a identificar el objeto. -->
+    <section class="seccion" aria-labelledby="titulo-caracteristicas" th:if="${objeto.tieneCaracteristicas()}"
+             th:with="ia=${objeto.caracteristicas}">
+        <h2 id="titulo-caracteristicas">Características detectadas en la foto</h2>
+        <div class="panel">
+            <dl class="datos">
+                <dt>Objeto</dt>         <dd th:text="${ia.objetoDetectado}">Mochila</dd>
+                <th:block th:if="${ia.tieneColores()}">
+                    <dt>Colores</dt>    <dd th:text="${ia.colores}">Negro, gris</dd>
+                </th:block>
+                <th:block th:if="${ia.tieneMarca()}">
+                    <dt>Marca</dt>      <dd th:text="${ia.marca}">Totto</dd>
+                </th:block>
+                <th:block th:if="${ia.tieneMaterial()}">
+                    <dt>Material</dt>   <dd th:text="${ia.material}">Tela</dd>
+                </th:block>
+                <th:block th:if="${ia.tieneRasgosDistintivos()}">
+                    <dt>Rasgos</dt>     <dd th:text="${ia.rasgosDistintivos}">Llavero de Lima</dd>
+                </th:block>
+            </dl>
+            <p class="campo__ayuda"
+               th:text="|Detectadas automáticamente con IA el ${#temporals.format(ia.fechaHoraAnalisis, 'dd/MM/yyyy HH:mm')}. Pueden no ser exactas.|">
+                Detectadas automáticamente con IA. Pueden no ser exactas.
+            </p>
+        </div>
+    </section>
 
     <!-- ===== Solo Oficina ===== -->
     <th:block th:if="${yo.esOficina()}">
@@ -134,6 +162,10 @@
         <div class="seccion__cabecera">
             <h2 id="titulo-coincidencias">Posibles coincidencias</h2>
         </div>
+        <!-- HU-36: la lista llega priorizada (Coincidencia.priorizar): primero las de mayor nivel de similitud. -->
+        <p class="texto-secundario" th:if="${coincidencias.size() > 1}">
+            Ordenadas de la más parecida a la menos: revisa primero las de nivel Alta.
+        </p>
 
         <ul class="tarjetas" th:unless="${coincidencias.isEmpty()}">
             <li th:each="c : ${coincidencias}">

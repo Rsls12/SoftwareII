@@ -23,6 +23,7 @@ Usamos **Render** (plan gratis) con Docker. La base de datos y las fotos siguen 
    - `DB_PASSWORD`
    - `SUPABASE_URL`
    - `SUPABASE_KEY`
+   - `GEMINI_API_KEY` (opcional, HU-33): clave de Google AI Studio (https://aistudio.google.com, gratis y sin tarjeta) para que Gemini reconozca las características de las fotos. El plan gratuito tiene un límite de peticiones por minuto y por día, y Google puede usar lo enviado para mejorar sus productos. Si se deja vacía, la app funciona igual, sin ese análisis.
 5. **Aplicar** (*Apply*). El primer build tarda entre 5 y 10 minutos. Al terminar, Render muestra la URL (`https://ufound-xxxx.onrender.com`).
 6. Abrir `https://<tu-url>/login` y entrar con un usuario de la tabla `usuario` de Supabase.
 
