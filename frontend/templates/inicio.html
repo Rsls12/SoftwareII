@@ -46,7 +46,8 @@
     <th:block th:unless="${yo.esEstudiante()}">
         <div class="acciones">
             <a class="boton" th:if="${yo.esSeguridad()}" th:href="@{/objetos/nuevo}">Registrar objeto encontrado</a>
-            <a class="boton" th:if="${yo.esOficina()}" th:href="@{/buscar}">Gestionar objetos</a>
+            <a class="boton" th:if="${yo.esOficina()}" th:href="@{/dashboard}">Ver dashboard</a>
+            <a class="boton boton--secundario" th:if="${yo.esOficina()}" th:href="@{/buscar}">Gestionar objetos</a>
             <a class="boton boton--secundario" th:if="${yo.esOficina()}" th:href="@{/entregas}">Historial de entregas</a>
             <a class="boton boton--secundario" th:if="${yo.esOficina()}" th:href="@{/estadisticas}">Estadísticas</a>
         </div>

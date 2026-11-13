@@ -526,6 +526,16 @@ img.detalle__foto { border: 0; box-shadow: var(--shadow-card); }
   .ranking__fila { grid-template-columns: 10rem 1fr 6rem; grid-template-areas: "nombre barra dato" ". detalle detalle"; }
 }
 
+/* ---------- Dashboard: tarjetas de resumen (HU-28) ---------- */
+.indicadores { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
+.indicador { gap: var(--sp-1); padding: var(--sp-4); }
+.indicador__valor { font-family: var(--font-mono); font-size: var(--fs-2xl); font-weight: 700; color: var(--c-accent); }
+.indicador__nombre { font-size: var(--fs-sm); color: var(--c-text-muted); }
+
+@media (min-width: 768px) {
+  .indicadores { grid-template-columns: repeat(3, 1fr); }
+}
+
 /* ---------- Notificaciones (HU-26) ---------- */
 .notificaciones { display: grid; gap: var(--sp-3); margin: 0; padding: 0; list-style: none; }
 .notificacion { display: grid; gap: var(--sp-2); }

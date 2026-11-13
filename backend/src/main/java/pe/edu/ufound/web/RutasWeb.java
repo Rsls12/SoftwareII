@@ -25,6 +25,7 @@ import pe.edu.ufound.model.FrecuenciaCategoria;
 import pe.edu.ufound.model.Notificacion;
 import pe.edu.ufound.model.Objeto;
 import pe.edu.ufound.model.Pabellon;
+import pe.edu.ufound.model.RolUsuario;
 import pe.edu.ufound.model.TipoObjeto;
 import pe.edu.ufound.model.Usuario;
 import pe.edu.ufound.repositorio.CoincidenciaRepository;
@@ -89,6 +90,7 @@ public class RutasWeb {
                 .GET("/recientes", this::recientes)
                 .GET("/entregas", this::historialDeEntregas)
                 .GET("/estadisticas", this::estadisticas)
+                .GET("/dashboard", this::dashboard)
                 .GET("/api/categorias", this::categorias)
                 .GET("/api/autocompletar", this::autocompletar)
                 .build();
@@ -365,6 +367,24 @@ public class RutasWeb {
         modelo.put("desde", desde);
         modelo.put("hasta", hasta);
         return ServerResponse.ok().render("estadisticas", modelo);
+    }
+
+    // ---------- Dashboard ----------
+
+    private ServerResponse dashboard(ServerRequest peticion) {
+        Map<String, Object> modelo = modelo(peticion, yo(peticion));
+        modelo.put("totalObjetos", objetos.countByActivoTrue());
+        modelo.put("totalPerdidos", objetos.countByActivoTrueAndTipo(TipoObjeto.PERDIDO));
+        modelo.put("totalEncontrados", objetos.countByActivoTrueAndTipo(TipoObjeto.ENCONTRADO));
+        modelo.put("totalEnOficina", objetos.countByActivoTrueAndEstado(EstadoObjeto.DISPONIBLE_EN_OFICINA));
+        modelo.put("totalEntregados", objetos.countByActivoTrueAndEstado(EstadoObjeto.ENTREGADO));
+        modelo.put("totalEstudiantes", usuarios.countByRol(RolUsuario.ESTUDIANTE));
+        // Mismo gráfico de HU-38
+        modelo.put("porEstado", Estadistica.porEstado(objetos.findByActivoTrueOrderByFechaHoraReporteDesc()));
+        modelo.put("sinMovimiento", objetos.sinMovimiento());
+        modelo.put("diasSinMovimiento", Objeto.DIAS_SIN_MOVIMIENTO);
+        modelo.put("entregas", objetos.ultimasEntregas(5));
+        return ServerResponse.ok().render("dashboard", modelo);
     }
 
     // ---------- Categorías en JSON (HU-05) ----------

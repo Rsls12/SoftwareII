@@ -63,4 +63,24 @@ public interface ObjetoRepository extends JpaRepository<Objeto, Long> {
     default List<Objeto> recientes(int cantidad) {
         return findByActivoTrueOrderByFechaHoraReporteDesc().stream().limit(cantidad).toList();
     }
+
+    // ---------- Dashboard ----------
+
+    long countByActivoTrue();
+
+    long countByActivoTrueAndTipo(TipoObjeto tipo);
+
+    long countByActivoTrueAndEstado(EstadoObjeto estado);
+
+    // Casos sin movimiento, el más antiguo primero.
+    default List<Objeto> sinMovimiento() {
+        return findByActivoTrueOrderByFechaHoraReporteDesc().stream()
+                .filter(Objeto::necesitaAtencion)
+                .sorted(Comparator.comparing(Objeto::getFechaUltimaActualizacion))
+                .toList();
+    }
+
+    default List<Entrega> ultimasEntregas(int cantidad) {
+        return entregas().stream().limit(cantidad).toList();
+    }
 }

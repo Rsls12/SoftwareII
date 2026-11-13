@@ -41,6 +41,7 @@ public class Objeto {
     public static final int DESCRIPCION_MAXIMA = 500;
     public static final int IMAGEN_URL_MAXIMA = 255;
     public static final int DIAS_MAXIMOS_COINCIDENCIA = 30;
+    public static final int DIAS_SIN_MOVIMIENTO = 7;
     // Palabras que aparecen en casi cualquier descripción y no ayudan a distinguir un objeto de otro.
     private static final Set<String> PALABRAS_COMUNES = Set.of("para", "esta", "este", "tiene", "color", "como",
             "sobre", "desde", "entre", "cerca", "donde", "pero", "creo", "deje", "olvide", "perdi");
@@ -340,6 +341,12 @@ public class Objeto {
 
     private boolean sigueAbierto() {
         return activo && !fueEntregado() && !estaArchivado();
+    }
+
+    // HU-28: caso abierto sin cambios de estado hace más de DIAS_SIN_MOVIMIENTO días.
+    public boolean necesitaAtencion() {
+        LocalDateTime limite = LocalDateTime.now().minusDays(DIAS_SIN_MOVIMIENTO);
+        return sigueAbierto() && getFechaUltimaActualizacion().isBefore(limite);
     }
 
     private Set<String> palabrasClave() {

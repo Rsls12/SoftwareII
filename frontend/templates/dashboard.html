@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<!-- HU-28: dashboard administrativo de la Oficina. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragmentos :: head('Dashboard')}"></head>
+<body class="app">
+<header th:replace="~{fragmentos :: nav('dashboard')}"></header>
+
+<main class="contenido">
+    <div class="pagina-titulo">
+        <h1>Dashboard</h1>
+        <p class="texto-secundario">Resumen de los objetos del campus y de lo que la Oficina tiene pendiente.</p>
+    </div>
+
+    <section class="seccion" aria-labelledby="titulo-resumen">
+        <h2 id="titulo-resumen">Resumen</h2>
+        <ul class="indicadores">
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalObjetos}">0</span>
+                <span class="indicador__nombre">Objetos registrados</span>
+            </li>
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalPerdidos}">0</span>
+                <span class="indicador__nombre">Perdidos</span>
+            </li>
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalEncontrados}">0</span>
+                <span class="indicador__nombre">Encontrados</span>
+            </li>
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalEnOficina}">0</span>
+                <span class="indicador__nombre">En oficina</span>
+            </li>
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalEntregados}">0</span>
+                <span class="indicador__nombre">Entregados</span>
+            </li>
+            <li class="indicador panel">
+                <span class="indicador__valor" th:text="${totalEstudiantes}">0</span>
+                <span class="indicador__nombre">Estudiantes registrados</span>
+            </li>
+        </ul>
+    </section>
+
+    <div class="acciones">
+        <a class="boton" th:href="@{/buscar}">Gestionar objetos</a>
+        <a class="boton boton--secundario" th:href="@{/coincidencias}">Coincidencias</a>
+        <a class="boton boton--secundario" th:href="@{/entregas}">Entregas</a>
+        <a class="boton boton--secundario" th:href="@{/estadisticas}">Estadísticas</a>
+    </div>
+
+    <!-- Mismo gráfico de HU-38 -->
+    <section class="seccion" aria-labelledby="titulo-estado">
+        <h2 id="titulo-estado">Objetos por estado</h2>
+        <ul class="ranking grafico panel" th:unless="${totalObjetos == 0}">
+            <li class="ranking__fila" th:each="e : ${porEstado}">
+                <span class="ranking__nombre" th:text="${e.etiqueta()}">Reportado</span>
+                <span class="ranking__barra" aria-hidden="true"><span th:style="|width: ${e.porcentaje()}%|"></span></span>
+                <span class="ranking__dato" th:text="|${e.cantidad()} (${e.porcentaje()} %)|">4 (33 %)</span>
+            </li>
+        </ul>
+        <p class="vacio" th:if="${totalObjetos == 0}">Aún no hay objetos registrados.</p>
+    </section>
+
+    <section class="seccion" aria-labelledby="titulo-atencion">
+        <div class="seccion__cabecera">
+            <h2 id="titulo-atencion">Requieren atención</h2>
+        </div>
+        <p class="texto-secundario" th:text="|Casos abiertos sin cambios de estado hace más de ${diasSinMovimiento} días, del más antiguo al más reciente.|">
+            Casos abiertos sin cambios de estado hace más de 7 días.
+        </p>
+        <th:block th:unless="${sinMovimiento.isEmpty()}">
+            <div th:replace="~{fragmentos :: tabla(${sinMovimiento})}"></div>
+        </th:block>
+        <p class="vacio" th:if="${sinMovimiento.isEmpty()}">Todos los casos abiertos están al día.</p>
+    </section>
+
+    <section class="seccion" aria-labelledby="titulo-entregas">
+        <div class="seccion__cabecera">
+            <h2 id="titulo-entregas">Últimas entregas</h2>
+            <a th:href="@{/entregas}">Ver todas</a>
+        </div>
+        <div class="tabla-contenedor" th:unless="${entregas.isEmpty()}">
+            <table>
+                <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Objeto</th>
+                    <th scope="col">Reclamante</th>
+                    <th scope="col">Encargado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="e : ${entregas}">
+                    <td><code th:text="${#temporals.format(e.fechaHoraEntrega, 'dd/MM/yyyy HH:mm')}">01/10/2026</code></td>
+                    <td>
+                        <a th:href="@{/objetos/{id}(id=${e.objeto.idObjeto})}" th:text="${e.objeto.nombre}">Objeto</a>
+                        <code th:text="${e.objeto.codigo}">UF-0001</code>
+                    </td>
+                    <td th:text="${e.nombreReclamante}">Nombre</td>
+                    <td th:text="${e.encargado.nombreCompleto}">Encargado</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="vacio" th:if="${entregas.isEmpty()}">Todavía no hay entregas registradas.</p>
+    </section>
+</main>
+</body>
+</html>

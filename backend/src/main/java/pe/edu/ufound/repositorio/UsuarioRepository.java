@@ -13,4 +13,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByCorreoIgnoreCase(String correo);
 
     Optional<Usuario> findFirstByRolOrderByIdUsuarioAsc(RolUsuario rol);
+
+    // HU-28: usuarios por rol.
+    long countByRol(RolUsuario rol);
 }
