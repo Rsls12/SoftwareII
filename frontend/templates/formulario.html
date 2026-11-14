@@ -56,6 +56,7 @@
                 <option th:each="c : ${categorias}" th:value="${c}" th:text="${c.etiqueta}"
                         th:selected="${(editando and c == objeto.categoria) or (!editando and c == categoriaSugerida)}">Tecnología</option>
             </select>
+            <p id="ayuda-categoria" class="campo__ayuda" hidden>No pudimos reconocer la categoría. Elígela tú.</p>
         </div>
 
         <div class="campo">
@@ -168,7 +169,10 @@
                 if (datos.nombre && sePuedeSugerir(campoNombre)) {
                     marcarSugerido(campoNombre, 'badge-nombre', datos.nombre);
                 }
-                if (datos.categoria && sePuedeSugerir(campoCategoria)) {
+                // HU-34: "Otros" no se sugiere; se pide elegir la categoría.
+                var categoriaReconocida = datos.categoria && datos.categoria !== 'OTROS';
+                document.getElementById('ayuda-categoria').hidden = categoriaReconocida;
+                if (categoriaReconocida && sePuedeSugerir(campoCategoria)) {
                     marcarSugerido(campoCategoria, 'badge-categoria', datos.categoria);
                 }
                 if (datos.descripcion && sePuedeSugerir(campoDescripcion)) {
