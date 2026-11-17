@@ -364,7 +364,12 @@ public class Objeto {
 
     // HU-28: caso abierto sin cambios de estado hace más de DIAS_SIN_MOVIMIENTO días.
     public boolean necesitaAtencion() {
-        LocalDateTime limite = LocalDateTime.now().minusDays(DIAS_SIN_MOVIMIENTO);
+        return necesitaAtencion(LocalDateTime.now());
+    }
+
+    // Recibe la fecha actual para que las pruebas puedan fijarla y revisar el límite exacto de 7 días.
+    boolean necesitaAtencion(LocalDateTime ahora) {
+        LocalDateTime limite = ahora.minusDays(DIAS_SIN_MOVIMIENTO);
         return sigueAbierto() && getFechaUltimaActualizacion().isBefore(limite);
     }
 

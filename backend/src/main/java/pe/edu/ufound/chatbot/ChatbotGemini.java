@@ -34,19 +34,21 @@ public class ChatbotGemini {
             di que no lo sabes y que consulten en la Oficina. No inventes datos.
             """;
 
-    private static final String URL = "https://generativelanguage.googleapis.com/v1beta/models/";
-
     private static final Logger log = LoggerFactory.getLogger(ChatbotGemini.class);
 
     private final String apiKey;
     private final String modelo;
+    private final String url;
     private final HttpClient client = HttpClient.newHttpClient();
     private final JsonMapper json = JsonMapper.builder().build();
 
+    // La URL se puede cambiar para que las pruebas usen un servidor local en lugar de Gemini.
     public ChatbotGemini(@Value("${chatbot.api-key:}") String apiKey,
-                         @Value("${chatbot.modelo:gemini-3.1-flash-lite}") String modelo) {
+                         @Value("${chatbot.modelo:gemini-3.1-flash-lite}") String modelo,
+                         @Value("${chatbot.url:https://generativelanguage.googleapis.com/v1beta/models/}") String url) {
         this.apiKey = apiKey == null || apiKey.isBlank() ? null : apiKey.trim();
         this.modelo = modelo.trim();
+        this.url = url.endsWith("/") ? url : url + "/";
     }
 
     public String responder(String pregunta) {
@@ -78,7 +80,7 @@ public class ChatbotGemini {
 
     private HttpRequest peticion(String pregunta) {
         return HttpRequest.newBuilder()
-                .uri(URI.create(URL + modelo + ":generateContent"))
+                .uri(URI.create(url + modelo + ":generateContent"))
                 .timeout(Duration.ofSeconds(20))
                 .header("Content-Type", "application/json; charset=utf-8")
                 .header("x-goog-api-key", apiKey)
