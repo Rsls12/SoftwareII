@@ -34,7 +34,7 @@ class Hu20EliminarReporteIT extends BaseHuIT {
     }
 
     @Test
-    @DisplayName("CB-03: el dueño elimina su reporte")
+    @DisplayName("El dueño elimina su reporte")
     void elDuenoElimina() throws Exception {
         Objeto reporte = reporteDeAna("HU20 Gorro del dueño");
 
@@ -62,7 +62,7 @@ class Hu20EliminarReporteIT extends BaseHuIT {
     }
 
     @Test
-    @DisplayName("CB-02: otro estudiante recibe 403")
+    @DisplayName("Otro estudiante recibe 403")
     void otroEstudianteNoElimina() throws Exception {
         Objeto reporte = reporteDeAna("HU20 Ajeno");
 
@@ -73,7 +73,7 @@ class Hu20EliminarReporteIT extends BaseHuIT {
     }
 
     @Test
-    @DisplayName("CB-01: Seguridad y Oficina reciben 403")
+    @DisplayName("Seguridad y Oficina reciben 403")
     void seguridadYOficinaNoEliminan() throws Exception {
         Objeto reporte = reporteDeAna("HU20 Intento staff");
 
