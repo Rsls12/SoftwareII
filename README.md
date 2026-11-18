@@ -1,75 +1,173 @@
 # U-FOUND
 
-Sistema de objetos perdidos y encontrados del campus. Spring Boot 4 + Thymeleaf, Java 17.
+Sistema web de objetos perdidos y encontrados del campus de la Universidad de Lima. Los estudiantes reportan lo que perdieron, el personal de Seguridad registra lo que encuentra y la Oficina de Objetos Perdidos gestiona cada caso hasta entregar el objeto a su dueño. En el Release 2 se agregaron la detección automática de coincidencias, las notificaciones, el análisis de fotos con IA, un chatbot de ayuda y las estadísticas para la Oficina.
 
-## Cómo correrlo
+- Aplicación publicada: https://ufound.onrender.com
+- Tecnologías: Java 17, Spring Boot 4, Spring Security, Thymeleaf, JPA, Supabase (PostgreSQL y Storage), Google Gemini y Render con Docker.
+- Proyecto del curso Ingeniería de Software II, Grupo 1 (sección 851), desarrollado con Scrum en dos Releases.
 
-Se necesita el archivo `backend/.env` con las credenciales de Supabase (ver `backend/.env.example`).
+## Equipo
+
+| Integrante | Rol |
+|---|---|
+| Rodrigo Lucen Samaniego | Product Owner |
+| Mateo Ortega Escurra | Scrum Master |
+| Rodrigo Arcos Mondragón | Desarrollador |
+| César Porras Peña | Desarrollador |
+| Jose Luis Misagel Huashuayo | Desarrollador |
+| Luis Rudy Reguera Garcia | Desarrollador |
+| Mathias Vegas Carbajal | Desarrollador |
+
+## Cómo usarlo
+
+### Roles
+
+| Rol | Qué puede hacer |
+|---|---|
+| Estudiante | Reportar objetos perdidos con foto, buscar y filtrar objetos, ver sus publicaciones, editar o eliminar sus reportes, recibir notificaciones de coincidencias y consultar al chatbot |
+| Seguridad | Registrar objetos encontrados con foto, buscar objetos y ver su detalle |
+| Oficina de Objetos Perdidos | Cambiar el estado de los objetos, registrar entregas, revisar coincidencias y ver el dashboard, las estadísticas y el historial de entregas |
+
+### Entrar al sistema
+
+1. Abrir https://ufound.onrender.com/login. En el plan gratuito de Render el servidor se apaga tras unos minutos sin visitas, así que la primera carga puede tardar alrededor de un minuto.
+2. Elegir el acceso: **Usuarios** (estudiantes y Seguridad) u **Oficina de objetos perdidos**.
+3. Ingresar el correo y la contraseña. Un estudiante nuevo puede crear su cuenta desde el enlace de registro (`/registro`).
+
+Cada rol ve un inicio distinto, con las opciones que le corresponden.
+
+### Pantallas principales
+
+| Ruta | Pantalla | Rol |
+|---|---|---|
+| `/` | Inicio según el rol | Todos |
+| `/objetos/nuevo` | Reportar un objeto perdido o encontrado, con foto y autocompletado con IA | Estudiante y Seguridad |
+| `/objetos/{id}` | Detalle del objeto, estado, historial y coincidencias | Todos |
+| `/buscar` | Búsqueda y filtros por texto, tipo, categoría, ubicación y estado | Todos |
+| `/recientes` | Objetos reportados recientemente | Todos |
+| `/mis-publicaciones` | Reportes propios, con edición y eliminación | Estudiante |
+| `/notificaciones` | Avisos de posibles coincidencias | Estudiante |
+| `/coincidencias` | Coincidencias ordenadas por nivel de similitud | Oficina |
+| `/dashboard` | Resumen de casos y casos sin movimiento | Oficina |
+| `/estadisticas` | Estadísticas por estado, categoría, mes y ubicación | Oficina |
+| `/entregas` | Historial de entregas | Oficina |
+
+### Correrlo en local
+
+Se necesita el archivo `backend/.env` con las credenciales de Supabase. Los nombres de las variables están en `backend/.env.example`.
 
 ```
 cd backend
 ./mvnw spring-boot:run        (Windows: mvnw.cmd spring-boot:run)
 ```
 
-Es una sola aplicación: `backend/` la compila y la levanta, y al hacerlo empaqueta las vistas y los estilos de `frontend/`.
+Después abrir http://localhost:8080/login. Es una sola aplicación: `backend/` la compila y la levanta, y al hacerlo empaqueta las vistas y los estilos de `frontend/`.
 
-Abrir http://localhost:8080/login e iniciar sesión con el correo y la contraseña de un usuario de la tabla `usuario` de Supabase. Cada rol (Estudiante, Seguridad, Oficina) ve un inicio distinto.
+Los usuarios y los objetos están en la base de datos de Supabase. Cada usuario tiene su contraseña guardada como hash BCrypt en `usuario.contrasena`.
 
-El código no trae usuarios ni objetos de ejemplo: todo sale de la base de datos. Cada usuario tiene su propia contraseña, guardada como hash BCrypt en `usuario.contrasena`. Los usuarios se dan de alta en Supabase, generando el hash con `extensions.crypt('clave', extensions.gen_salt('bf', 10))`.
+El análisis de fotos y el chatbot usan Google Gemini y se activan con `GEMINI_API_KEY` y `CHATBOT_API_KEY`. Sin esas claves la aplicación funciona igual, sin esas dos funciones.
 
-## Publicarlo en internet
+### Pruebas
 
-Se despliega en Render con Docker (`Dockerfile` + `render.yaml`). Pasos en [DESPLIEGUE.md](DESPLIEGUE.md).
+```
+cd backend
+./mvnw test        (Windows: mvnw.cmd test)
+```
 
-## Estructura
+Las pruebas usan una base H2 en memoria, un Supabase Storage falso y sus propios datos (`src/test/java/pe/edu/ufound/DatosDePrueba`), así que no tocan Supabase ni llaman a Gemini.
+
+### Despliegue
+
+Se despliega en Render con Docker (`Dockerfile` y `render.yaml`). Cada push a `main` vuelve a desplegar la aplicación. Los pasos están en [DESPLIEGUE.md](DESPLIEGUE.md).
+
+## Lo realizado en cada Sprint
+
+### Release 1, Sprint 1 (16/09/2026 al 11/10/2026)
+
+Objetivo: entregar el MVP con acceso por rol, registro y catálogo de objetos, y gestión de estados e historiales. Se completaron las 22 historias comprometidas (48 puntos).
+
+| HU | Historia | Lo realizado |
+|---|---|---|
+| HU-01 | Iniciar sesión en el sistema | Login con Spring Security y contraseñas cifradas con BCrypt |
+| HU-02 | Cerrar sesión | Cierre de sesión que vuelve al login |
+| HU-03 | Visualizar home según rol | Inicio distinto para Estudiante, Seguridad y Oficina, con rutas protegidas por rol |
+| HU-04 | Registrar objeto perdido | El estudiante reporta un objeto perdido y queda guardado en Supabase |
+| HU-05 | Registrar categoría del objeto | Categoría obligatoria en el reporte |
+| HU-06 | Registrar ubicación del objeto | Pabellón donde se perdió o se encontró el objeto |
+| HU-07 | Registrar fecha y hora del reporte | Fecha y hora automáticas al guardar el reporte |
+| HU-08 | Registrar descripción física | Descripción validada de 10 a 500 caracteres |
+| HU-09 | Subir foto perdido | Foto del objeto perdido en Supabase Storage, con validación del tipo real del archivo |
+| HU-10 | Registrar objeto encontrado | Seguridad registra los objetos que encuentra |
+| HU-11 | Subir foto del objeto encontrado | Foto del objeto encontrado en Supabase Storage |
+| HU-12 | Ver detalle de objeto | Pantalla de detalle con todos los datos del reporte |
+| HU-13 | Mostrar estado del objeto | Estado visible en el detalle y en los listados |
+| HU-14 | Cambiar estado del objeto | La Oficina cambia el estado y registra la entrega con los datos de quien reclama |
+| HU-15 | Historial de estado del objeto | Línea de tiempo con cada cambio de estado, quién lo hizo y cuándo |
+| HU-16 | Buscar objetos | Búsqueda por texto en el nombre y la descripción |
+| HU-17 | Filtrar búsqueda | Filtros por tipo, categoría, ubicación y estado |
+| HU-18 | Historial publicaciones | El estudiante ve todos sus reportes |
+| HU-19 | Objetos recientes | Listado de los últimos objetos reportados |
+| HU-20 | Eliminar reportes | Solo el estudiante dueño puede eliminar su reporte |
+| HU-21 | Editar reportes | Solo el dueño puede editar su reporte mientras siga en estado Reportado |
+| HU-22 | Historial de entregas | La Oficina consulta los objetos entregados y a quién se entregaron |
+
+Además, el código se organizó en `backend/` y `frontend/`, y la lógica de negocio quedó en los objetos del modelo, sin services ni controllers.
+
+### Release 2, Sprint 2 (14/10/2026 al 15/11/2026)
+
+Objetivo: agregar inteligencia al sistema con coincidencias automáticas, notificaciones, IA para el registro, chatbot de ayuda y estadísticas para la Oficina. Se completaron las 18 historias comprometidas (54 puntos).
+
+| HU | Historia | Lo realizado |
+|---|---|---|
+| HU-23 | Detectar coincidencias | Puntaje de 0 a 100 entre objetos perdidos y encontrados según categoría, lugar, fechas y palabras en común |
+| HU-24 | Evaluar coincidencia | Nivel ALTO, MEDIO o BAJO según el puntaje |
+| HU-25 | Generar notificación | Aviso al estudiante cuando aparece una coincidencia relevante con su objeto |
+| HU-26 | Ver notificaciones | Pantalla de notificaciones del estudiante |
+| HU-27 | Marcar notificación como leída | El estudiante marca sus avisos como leídos |
+| HU-28 | Dashboard administrativo de Oficina | Resumen de casos para la Oficina, con los casos sin movimiento por más de 7 días |
+| HU-29 | Interactuar con chatbot de ayuda | Chatbot con Google Gemini para los estudiantes |
+| HU-30 | Consultar dudas sobre uso del sistema | El chatbot responde dudas sobre cómo usar U-FOUND |
+| HU-31 | Recibir guía automática en el registro de objetos | Cubierta por el registro asistido con IA de las HU-33 y HU-35 |
+| HU-32 | Subir imagen para análisis automático del objeto | Vista previa de la foto antes de enviarla al análisis |
+| HU-33 | Detectar características del objeto mediante IA | Gemini reconoce en la foto el tipo de objeto, los colores, la marca y otros rasgos |
+| HU-34 | Sugerir categoría automática del objeto | Categoría sugerida a partir del análisis de la foto |
+| HU-35 | Autocompletar formulario de registro de objeto | El formulario se llena con lo que reconoce la IA |
+| HU-36 | Priorizar coincidencias por nivel de similitud | Coincidencias ordenadas de mayor a menor similitud |
+| HU-37 | Sugerir posibles coincidencias automáticamente al usuario | Al registrar un objeto se muestran sus posibles coincidencias |
+| HU-38 | Visualizar estadísticas inteligentes de objetos perdidos | Estadísticas por estado, categoría y mes, con filtro de fechas |
+| HU-39 | Identificar categorías más frecuentes mediante análisis | Ranking de las categorías con más reportes en el inicio de la Oficina |
+| HU-40 | Mostrar tendencias de pérdida por ubicación | Ranking de pabellones con más objetos perdidos |
+
+Además, la aplicación se publicó en Render, el login pasó a tener un acceso para usuarios y otro para la Oficina, los estudiantes pueden crear su propia cuenta y las claves salieron del código a un archivo `.env`.
+
+## Estructura del proyecto
 
 **`backend/`**: proyecto Spring Boot (Java). Los paquetes están en `backend/src/main/java/pe/edu/ufound/`.
 
 | Carpeta | Qué hay |
 |---|---|
-| `model/` | Los objetos del sistema y sus reglas: `Usuario`, `Objeto`, `HistorialEstado`, `Entrega` y los enums. Aquí está toda la lógica de negocio |
+| `model/` | Los objetos del sistema y sus reglas de negocio: `Usuario`, `Objeto`, `HistorialEstado`, `Entrega`, `Coincidencia`, `Notificacion`, `CaracteristicasObjeto`, `Estadistica`, `FrecuenciaCategoria`, `FrecuenciaUbicacion` y los enums |
 | `repositorio/` | Interfaces Spring Data JPA que guardan y buscan los objetos en Supabase (PostgreSQL) |
 | `almacenamiento/` | `AlmacenamientoImagenes` (interfaz) y `AlmacenamientoSupabase`, que sube las fotos a Supabase Storage |
-| `reconocimiento/` | HU-33: `ReconocimientoImagenes` (interfaz) y `ReconocimientoGemini`, que analiza la foto con Gemini (plan gratuito de Google AI Studio). `RespuestaGemini` convierte su respuesta JSON en las `CaracteristicasObjeto` (qué es, colores, marca, material, rasgos). Se activa con `GEMINI_API_KEY`; sin ella la app funciona igual |
-| `seguridad/SeguridadConfig` | Spring Security: login con el hash BCrypt de cada usuario, logout y rutas por rol |
-| `web/RutasWeb` | Entrada HTTP: une cada ruta con el objeto que la atiende y con su vista. No tiene reglas de negocio |
-| `src/main/resources/application.properties` | Configuración de la aplicación |
-| `src/test/` | Pruebas |
-| `pom.xml` | Dependencias. También indica que las vistas y estilos se toman de `../frontend` |
+| `reconocimiento/` | `ReconocimientoImagenes` (interfaz) y `ReconocimientoGemini`, que analiza la foto con Gemini; `RespuestaGemini` convierte su respuesta en `CaracteristicasObjeto` |
+| `chatbot/` | `ChatbotGemini`, que responde las preguntas de los estudiantes |
+| `seguridad/` | `SeguridadConfig`: login con BCrypt, dos accesos, logout y rutas por rol |
+| `web/` | `RutasWeb`: une cada ruta con el objeto que la atiende y con su vista, sin reglas de negocio |
+| `src/main/resources/` | `application.properties` con la configuración de la aplicación |
+| `src/test/` | Pruebas automatizadas con JUnit 5 |
+| `pom.xml` | Dependencias del proyecto. También indica que las vistas y los estilos se toman de `../frontend` |
 
 **`frontend/`**: lo que ve el usuario. No tiene Java.
 
 | Carpeta | Qué hay |
 |---|---|
 | `templates/` | Vistas Thymeleaf. `fragmentos.html` tiene las piezas reutilizables |
-| `static/css/` | `tokens.css` (colores, tamaños) y `app.css` (estilos) |
-| `docs/` | Dirección visual y pendientes de la interfaz |
+| `static/css/` | `tokens.css` (colores y tamaños) y `app.css` (estilos) |
+| `docs/` | Dirección visual de la interfaz |
 
-## Para el equipo de backend
+## Decisiones de diseño
 
-Pendiente: permisos sobre un objeto concreto (solo el dueño edita o elimina su reporte); hoy la vista solo oculta botones.
-
-Sin services ni controllers: la lógica vive en los objetos de `model/`.
-
-- No hay clases `@Service` de negocio ni `@Controller`. Lo que hacía `ObjetoService` ahora lo hace `Objeto` (`reportar`, `cambiarEstado`, `coincideCon`, `editar`, `desactivar`) y las consultas están en `ObjetoRepository` (`buscar`, `recientes`).
-- `Objeto.cambiarEstado(estado, observacion, usuario)` crea su `HistorialEstado`; el historial es parte del objeto y se guarda con él.
-- `HistorialEstado` y `Entrega` ya son entidades JPA (tablas `historial_estado` y `entrega`).
-- `Objeto.entregar(nombre, documento, observacion, encargado)` crea su `Entrega` y cierra el caso: un objeto entregado ya no cambia de estado.
-- Las pruebas usan H2 en memoria, un Supabase Storage falso y sus propios datos (`src/test/java/pe/edu/ufound/DatosDePrueba`): no tocan Supabase.
-
-Sprint 1, HU-04, HU-05 y HU-09 (Rodrigo Arcos):
-
-- `Objeto` y `Usuario` son entidades JPA (tablas `objeto` y `usuario`) en Supabase (PostgreSQL).
-- `categoria`, `ubicacion`, `tipo` y `estado` se guardan como varchar, sin tabla propia (nota del diagrama). `GET /api/categorias` las lista.
-- `POST /objetos` guarda el objeto en BD; el estudiante registra PERDIDO y seguridad ENCONTRADO.
-- Fotos: `AlmacenamientoImagenes` (interfaz) con `AlmacenamientoSupabase`, que las sube al bucket de Supabase Storage. Se valida el tipo real del archivo (JPG, PNG, GIF, WEBP).
-
-Ya está hecho (Sprint 1, HU-01 a HU-03): login y logout con Spring Security, sesión por usuario y rutas por rol
-(`/entregas` y cambiar estado solo Oficina; registrar objeto solo Estudiante y Seguridad). Los formularios con
-`th:action` ya envían el token CSRF solos; un formulario nuevo con `action` a secas daría 403.
-
-## Niveles de la interfaz
-
-- **Nivel 1 (Sprint 1):** funcional, limpio, mobile-first y accesible. ← actual
-- **Nivel 2:** pulido de UX, estados vacíos y de error.
-- **Nivel 3:** animaciones y detalles finos.
+- Sin services ni controllers: la lógica vive en los objetos de `model/`. Por ejemplo, `Objeto` sabe reportarse, cambiar de estado, entregarse, editarse y calcular su puntaje de coincidencia con otro objeto.
+- `Objeto.cambiarEstado(estado, observacion, usuario)` crea su `HistorialEstado`, y `Objeto.entregar(...)` crea su `Entrega` y cierra el caso: un objeto entregado ya no cambia de estado.
+- Las categorías, ubicaciones, tipos y estados se guardan como texto, sin tabla propia.
+- Los formularios usan `th:action`, que agrega el token CSRF que pide Spring Security.
